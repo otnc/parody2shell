@@ -1,0 +1,113 @@
+---
+import type { AdvisoryLayoutProps } from '../layout-props.ts';
+import { messages } from '../../../i18n/messages.ts';
+import { advisorySummary } from '../../../advisories/generate.ts';
+import Evidence from '../Evidence.astro';
+import ScoreDetails from '../ScoreDetails.astro';
+import ThemeNav from './ThemeNav.astro';
+import ShareActions from '../../ShareActions.astro';
+import CaseEvidence from '../case/CaseEvidence.astro';
+import { caseView } from '../case/case-view.ts';
+
+const { advisory, locale, home, alternate, canonical, shareTitle } = Astro.props as AdvisoryLayoutProps;
+const s = messages[locale];
+const ja = locale === 'ja';
+const view = caseView(advisory, locale);
+const number = advisory.cve.slice(-3);
+const pips = Math.round(advisory.severity.score / 2);
+const index = [
+  { id: 'cover', title: ja ? '表紙' : 'Cover' },
+  { id: 'plate', title: ja ? '図版' : 'Plate' },
+  { id: 'notes', title: s.cause },
+  { id: 'response', title: s.mitigation },
+  { id: 'lab', title: s.evidence },
+];
+const [observed, ...later] = view.sections.filter(section => section.id !== 'expected');
+const expected = view.sections.find(section => section.id === 'expected');
+---
+
+<main id="bestiary-field-guide" class="theme-shell bestiary-field-guide">
+  <ThemeNav {locale} {home} {alternate} iconSet={advisory.iconSet} design={advisory.design} />
+  <nav class="bestiary-index" aria-label={ja ? '索引' : 'Index'}>
+    <ol>{index.map((entry, position) => <li><a href={'#bestiary-' + entry.id} data-flip-to={position}><span>{String(position + 1).padStart(2, '0')}</span> {entry.title}</a></li>)}</ol>
+  </nav>
+  <div class="bestiary-book" data-bestiary-book>
+    <section class="bestiary-page" id="bestiary-cover" data-density="hard">
+      <div class="bestiary-page-body bestiary-cover">
+        <p class="theme-parody">{s.parody}</p>
+        <p class="bestiary-number">{ja ? '標本 第' + number + '号' : 'Specimen No. ' + number}</p>
+        <h1 class="advisory-title">{advisory.subject}<wbr />2shell</h1>
+        <p class="advisory-summary">{advisorySummary(advisory, locale)}</p>
+      </div>
+    </section>
+    <section class="bestiary-page" id="bestiary-plate">
+      <div class="bestiary-page-body">
+        <svg class="bestiary-plate" viewBox="0 0 200 160" role="img" aria-label={ja ? '貝殻の図版' : 'Plate of a shell specimen'}>
+          <path d="M100 132c-44 0-70-30-70-62 0-30 25-52 56-52 26 0 46 18 46 42 0 20-16 36-36 36-16 0-28-12-28-27 0-12 10-22 22-22 9 0 16 7 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" />
+          <path d="M30 76l-14 10M44 108l-12 16M76 128l-4 18M118 130l8 16M152 112l16 10" stroke="currentColor" stroke-width="1.2" />
+          <text x="100" y="154" text-anchor="middle">{'Fig. ' + number}</text>
+        </svg>
+        <dl class="bestiary-card">
+          <div><dt>{s.cve}</dt><dd><code>{advisory.cve}</code></dd></div>
+          <div><dt>{s.severity}</dt><dd><span class="bestiary-pips" aria-hidden="true">{'◆'.repeat(pips)}{'◇'.repeat(5 - pips)}</span> {advisory.severity.score.toFixed(1)} · {s.ratings[advisory.severity.rating]}</dd></div>
+          <div><dt>{s.flowNodes.trigger}</dt><dd>{advisory.trigger[locale]}</dd></div>
+          <div><dt>{s.releaseRoles.affected}</dt><dd><code>{advisory.evidence.affectedVersion}</code></dd></div>
+        </dl>
+      </div>
+    </section>
+    <section class="bestiary-page" id="bestiary-notes">
+      <div class="bestiary-page-body">
+        <h2>{s.cause}</h2><p>{advisory.cause[locale]}</p>
+        {expected && <><h2>{expected.title}</h2><p>{expected.text}</p></>}
+        {observed && <><h2>{observed.title}</h2><p>{observed.text}</p></>}
+      </div>
+    </section>
+    <section class="bestiary-page" id="bestiary-response">
+      <div class="bestiary-page-body">
+        {later.map(section => <><h2>{section.title}</h2><p>{section.text}</p></>)}
+        <h2>{s.affected}</h2><p>{advisory.affected[locale]}</p>
+        <h2>{s.mitigation}</h2><p>{advisory.workaround[locale]}</p>
+      </div>
+    </section>
+    <section class="bestiary-page" id="bestiary-lab" data-density="hard">
+      <div class="bestiary-page-body">
+        <CaseEvidence {advisory} {locale} form="versions" />
+        {advisory.evidence.format !== 'versions' && <Evidence {advisory} evidence={advisory.evidence} {locale} />}
+      </div>
+    </section>
+  </div>
+  <p class="bestiary-controls" data-bestiary-controls hidden>
+    <button type="button" data-flip="prev">{ja ? '前のページ' : 'Previous page'}</button>
+    <button type="button" data-flip="next">{ja ? '次のページ' : 'Next page'}</button>
+  </p>
+  <footer class="bestiary-footer">
+    <ScoreDetails severity={advisory.severity} {locale} />
+    <ShareActions {locale} url={canonical} title={shareTitle} design={advisory.design} iconSet={advisory.iconSet} buttonClass="bestiary-action" />
+  </footer>
+</main>
+
+<script is:inline src="/client/page-flip.js"></script>
+<script is:inline>
+  const book = document.querySelector('[data-bestiary-book]');
+  const controls = document.querySelector('[data-bestiary-controls]');
+  const roomy = matchMedia('(min-width: 52rem)').matches;
+  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (book && controls && roomy && !calm && window.St) {
+    const pages = book.querySelectorAll('.bestiary-page');
+    const flip = new window.St.PageFlip(book, {
+      width: 420, height: 600, size: 'stretch', minWidth: 300, maxWidth: 520, minHeight: 460, maxHeight: 700,
+      showCover: true, usePortrait: true, mobileScrollSupport: false, flippingTime: 700,
+    });
+    flip.loadFromHTML(pages);
+    book.classList.add('is-bound');
+    controls.hidden = false;
+    controls.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-flip]');
+      if (button) button.dataset.flip === 'next' ? flip.flipNext() : flip.flipPrev();
+    });
+    document.querySelectorAll('[data-flip-to]').forEach((link) => link.addEventListener('click', (event) => {
+      event.preventDefault();
+      flip.flip(Number(link.dataset.flipTo));
+    }));
+  }
+</script>

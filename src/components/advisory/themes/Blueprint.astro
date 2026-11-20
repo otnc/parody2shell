@@ -1,0 +1,94 @@
+---
+import type { AdvisoryLayoutProps } from '../layout-props.ts';
+import { messages } from '../../../i18n/messages.ts';
+import { advisorySummary } from '../../../advisories/generate.ts';
+import Evidence from '../Evidence.astro';
+import ScoreDetails from '../ScoreDetails.astro';
+import ThemeNav from './ThemeNav.astro';
+import ShareActions from '../../ShareActions.astro';
+import CaseEvidence from '../case/CaseEvidence.astro';
+import { caseView } from '../case/case-view.ts';
+
+const { advisory, locale, home, alternate, canonical, shareTitle } = Astro.props as AdvisoryLayoutProps;
+const s = messages[locale];
+const ja = locale === 'ja';
+const view = caseView(advisory, locale);
+const sheet = advisory.cve.slice(-4);
+const titleBlock = [
+  [s.cve, advisory.cve],
+  [s.score, advisory.severity.score.toFixed(1) + ' · ' + s.ratings[advisory.severity.rating]],
+  [s.releaseRoles.affected, advisory.evidence.affectedVersion],
+  [s.releaseRoles.fixed, advisory.evidence.fixedVersion],
+  [ja ? '図面番号' : 'Sheet', 'A-' + sheet],
+];
+---
+
+<main id="blueprint-foldout" class="theme-shell blueprint-foldout">
+  <ThemeNav {locale} {home} {alternate} iconSet={advisory.iconSet} design={advisory.design} />
+  <header class="blueprint-heading">
+    <p class="theme-parody">{s.parody}</p>
+    <h1 class="advisory-title">{advisory.subject}<wbr />2shell</h1>
+    <p class="advisory-summary">{advisorySummary(advisory, locale)}</p>
+  </header>
+  <div class="blueprint-sheet">
+    <section class="blueprint-drawing" aria-labelledby="blueprint-drawing-title">
+      <h2 id="blueprint-drawing-title">{ja ? '断面 A-A' : 'Section A-A'}</h2>
+      <CaseEvidence {advisory} {locale} form="flow" class="blueprint-flow" />
+      <p class="blueprint-dimension" aria-hidden="true"><span>{view.hits}</span><i></i><span>{view.trials}</span></p>
+    </section>
+    <ol class="blueprint-notes" aria-label={ja ? '注記' : 'Drawing notes'}>
+      <li data-mark="note"><h2>{s.cause}</h2><p>{advisory.cause[locale]}</p></li>
+      {view.sections.map(section => (
+        <li data-mark={section.id === 'observed' ? 'fault' : section.id === 'conditions' ? 'bracket' : undefined}><h2>{section.title}</h2><p>{section.text}</p></li>
+      ))}
+    </ol>
+  </div>
+  <details class="blueprint-fold" open>
+    <summary>{ja ? '折り込み: 版ごとの結果と対処' : 'Foldout: release results and response'}</summary>
+    <div class="blueprint-fold-body">
+      <CaseEvidence {advisory} {locale} form="versions" />
+      <div>
+        <h2>{s.affected}</h2><p>{advisory.affected[locale]}</p>
+        <h2>{s.mitigation}</h2><p>{advisory.workaround[locale]}</p>
+      </div>
+    </div>
+    {advisory.evidence.format !== 'flow' && advisory.evidence.format !== 'versions' && <Evidence {advisory} evidence={advisory.evidence} {locale} />}
+  </details>
+  <footer class="blueprint-footer">
+    <table class="blueprint-title-block">
+      <caption>{ja ? '表題欄' : 'Title block'}</caption>
+      <tbody>{titleBlock.map(([key, value], index) => <tr><th scope="row">{key}</th><td data-mark={index === 0 ? 'circle' : undefined}>{value}</td></tr>)}</tbody>
+    </table>
+    <div>
+      <button type="button" class="blueprint-markup" data-blueprint-markup aria-pressed="false" hidden>{ja ? '朱書きを表示' : 'Show markup'}</button>
+      <ScoreDetails severity={advisory.severity} {locale} />
+      <ShareActions {locale} url={canonical} title={shareTitle} design={advisory.design} iconSet={advisory.iconSet} buttonClass="blueprint-action" />
+    </div>
+  </footer>
+</main>
+
+<script is:inline type="module">
+  import { annotate, annotationGroup } from '/client/rough-notation.js';
+
+  const button = document.querySelector('[data-blueprint-markup]');
+  const root = document.querySelector('#blueprint-foldout');
+  if (button && root) {
+    const animate = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const color = '#ff6f61';
+    const marks = [
+      ...[...root.querySelectorAll('.blueprint-flow [data-role="shell"]')].map(element => annotate(element, { type: 'box', color, padding: 6, animate })),
+      ...[...root.querySelectorAll('[data-mark="fault"] p')].map(element => annotate(element, { type: 'underline', color, multiline: true, animate })),
+      ...[...root.querySelectorAll('[data-mark="bracket"]')].map(element => annotate(element, { type: 'bracket', brackets: ['left'], color, animate })),
+      ...[...root.querySelectorAll('[data-mark="circle"]')].map(element => annotate(element, { type: 'circle', color, padding: 8, animate })),
+    ];
+    const group = annotationGroup(marks);
+    const labels = [button.textContent, document.documentElement.lang === 'ja' ? '朱書きを隠す' : 'Hide markup'];
+    button.hidden = false;
+    button.addEventListener('click', () => {
+      const showing = button.getAttribute('aria-pressed') === 'true';
+      if (showing) group.hide(); else group.show();
+      button.setAttribute('aria-pressed', String(!showing));
+      button.textContent = labels[showing ? 0 : 1];
+    });
+  }
+</script>

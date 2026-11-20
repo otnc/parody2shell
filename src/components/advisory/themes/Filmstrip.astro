@@ -1,0 +1,63 @@
+---
+import type { AdvisoryLayoutProps } from '../layout-props.ts';
+import { messages } from '../../../i18n/messages.ts';
+import { advisorySummary } from '../../../advisories/generate.ts';
+import Evidence from '../Evidence.astro';
+import ScoreDetails from '../ScoreDetails.astro';
+import ThemeNav from './ThemeNav.astro';
+import ShareActions from '../../ShareActions.astro';
+
+const { advisory, locale, home, alternate, canonical, shareTitle } = Astro.props as AdvisoryLayoutProps;
+const s = messages[locale];
+const scenes = [
+  [s.summary, advisorySummary(advisory, locale)],
+  [s.cause, advisory.cause[locale]],
+  [s.affected, advisory.affected[locale]],
+  [s.mitigation, advisory.workaround[locale]],
+];
+---
+
+<main id="evidence-filmstrip" class="theme-shell evidence-filmstrip">
+  <ThemeNav {locale} {home} {alternate} iconSet={advisory.iconSet} design={advisory.design} />
+  <header class="reel-heading">
+    <p class="theme-parody">{s.parody}</p>
+    <h1 class="advisory-title">{advisory.title}</h1>
+    <p><span>{s.cve}</span> <code>{advisory.cve}</code></p>
+  </header>
+  <section class="splide case-reel" aria-label={locale === 'ja' ? '調査記録の場面' : 'Evidence scenes'} data-reel>
+    <div class="splide__track">
+      <ul class="splide__list">
+        {scenes.map(([heading, text], index) => (
+          <li class="splide__slide reel-scene">
+            <span class="reel-frame">{index + 1} / {scenes.length}</span>
+            <article><h2>{heading}</h2><p>{text}</p></article>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+  <div class="reel-credits">
+    <p><b>{s.score}</b> {advisory.severity.score.toFixed(1)} · {s.ratings[advisory.severity.rating]}</p>
+    <ScoreDetails severity={advisory.severity} {locale} />
+    <ShareActions {locale} url={canonical} title={shareTitle} design={advisory.design} iconSet={advisory.iconSet} buttonClass="reel-action" />
+  </div>
+  <Evidence {advisory} evidence={advisory.evidence} {locale} />
+</main>
+
+<script is:inline type="module">
+  import { Splide } from '/client/splide.js';
+
+  const reel = document.querySelector('[data-reel]');
+  if (reel) {
+    const japanese = document.documentElement.lang === 'ja';
+    new Splide(reel, {
+      rewind: true,
+      autoHeight: true,
+      keyboard: 'focused',
+      i18n: japanese ? {
+        prev: '前の場面へ', next: '次の場面へ', first: '最初の場面へ', last: '最後の場面へ',
+        slideX: '場面 %s へ移動', select: '場面を選ぶ', slide: '場面', slideLabel: '%s / %s',
+      } : {},
+    }).mount();
+  }
+</script>

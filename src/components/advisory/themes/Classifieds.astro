@@ -1,0 +1,29 @@
+---
+import type { AdvisoryLayoutProps } from '../layout-props.ts';
+import { messages } from '../../../i18n/messages.ts';
+import { advisorySummary } from '../../../advisories/generate.ts';
+import Evidence from '../Evidence.astro';
+import ScoreDetails from '../ScoreDetails.astro';
+import ThemeNav from './ThemeNav.astro';
+import ShareActions from '../../ShareActions.astro';
+
+const { advisory, locale, home, alternate, canonical, shareTitle } = Astro.props as AdvisoryLayoutProps;
+const s = messages[locale];
+---
+
+<main id="classified-notice" class="theme-shell classified-notice">
+  <ThemeNav {locale} {home} {alternate} iconSet={advisory.iconSet} design={advisory.design} />
+  <div class="classified-board">
+    <article class="classified-display">
+      <div class="classified-tags"><span class="tag is-small">{s.parody}</span><span class="tag is-small">{s.ratings[advisory.severity.rating]}</span></div>
+      <h1 class="advisory-title">{advisory.title}</h1>
+      <p class="advisory-summary">{advisorySummary(advisory, locale)}</p>
+      <ShareActions {locale} url={canonical} title={shareTitle} design={advisory.design} iconSet={advisory.iconSet} buttonClass="button outline primary" />
+    </article>
+    <article class="classified-affected"><h2>{s.affected}</h2><p>{advisory.affected[locale]}</p></article>
+    <article class="classified-cause"><h2>{s.cause}</h2><p>{advisory.cause[locale]}</p></article>
+    <article class="classified-fix"><h2>{s.mitigation}</h2><p>{advisory.workaround[locale]}</p></article>
+    <aside class="classified-score"><h2>{s.score}</h2><strong>{advisory.severity.score.toFixed(1)}</strong><p>{s.cve} <code>{advisory.cve}</code></p><ScoreDetails severity={advisory.severity} {locale} /></aside>
+  </div>
+  <Evidence {advisory} evidence={advisory.evidence} {locale} />
+</main>

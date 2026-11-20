@@ -1,0 +1,67 @@
+---
+import { Button, buttonVariants } from './ui/button';
+import type { DesignId } from '../advisories/designs.ts';
+import { messages, type Locale } from '../i18n/messages.ts';
+import type { IconSet } from '../advisories/visuals.ts';
+import AdvisoryIcon from './ui/AdvisoryIcon.astro';
+
+interface Props {
+  locale: Locale;
+  url: URL;
+  title: string;
+  design: 'home' | DesignId;
+  buttonClass?: string;
+  iconSet?: IconSet;
+}
+
+const { locale, url, title, design, buttonClass, iconSet } = Astro.props;
+const strings = messages[locale];
+const intent = new URL('https://twitter.com/intent/tweet');
+intent.searchParams.set('text', title);
+intent.searchParams.set('url', url.href);
+intent.searchParams.set('hashtags', 'parody2shell');
+const advisoryClasses: Partial<Record<DesignId, string>> = {
+  recall: 'd-btn d-btn-sm d-btn-outline rounded-none',
+  research: 'd-btn d-btn-sm d-btn-ghost',
+  incident: 'd-btn d-btn-sm d-btn-outline d-btn-info',
+  maintainer: 'd-btn d-btn-sm d-btn-outline font-mono',
+};
+const shareClass = design === 'home' ? undefined : buttonClass ?? advisoryClasses[design];
+---
+
+<div class="share-actions" data-share-actions data-copied={strings.copied}>
+  {design === 'home' ? (
+    <>
+      <a class={buttonVariants({ variant: 'outline', size: 'sm' })} href={intent.href} target="_blank" rel="noopener noreferrer">{strings.share}</a>
+      <Button type="button" variant="ghost" size="sm" data-copy-url>{strings.copy}</Button>
+    </>
+  ) : (
+    <>
+      <a class={shareClass} href={intent.href} target="_blank" rel="noopener noreferrer">{iconSet && <AdvisoryIcon set={iconSet} name="share" />}{strings.share}</a>
+      <button class={shareClass} type="button" data-copy-url>{iconSet && <AdvisoryIcon set={iconSet} name="copy" />}{strings.copy}</button>
+    </>
+  )}
+  <output class="share-feedback" aria-live="polite"></output>
+  <input type="text" aria-label={strings.copyManually} value={url.href} data-share-url readonly hidden />
+</div>
+
+<script is:inline>
+  document.querySelectorAll('[data-share-actions]').forEach((actions) => {
+    const button = actions.querySelector('[data-copy-url]');
+    const field = actions.querySelector('[data-share-url]');
+    const feedback = actions.querySelector('output');
+    if (!button || !field || !feedback) return;
+
+    button.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(field.value);
+        feedback.value = actions.dataset.copied ?? '';
+        field.hidden = true;
+      } catch {
+        field.hidden = false;
+        field.focus();
+        field.select();
+      }
+    });
+  });
+</script>

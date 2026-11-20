@@ -1,0 +1,71 @@
+---
+import type { AdvisoryLayoutProps } from '../layout-props.ts';
+import { messages } from '../../../i18n/messages.ts';
+import { advisorySummary } from '../../../advisories/generate.ts';
+import Evidence from '../Evidence.astro';
+import ScoreDetails from '../ScoreDetails.astro';
+import ThemeNav from './ThemeNav.astro';
+import ShareActions from '../../ShareActions.astro';
+
+const { advisory, locale, home, alternate, canonical, shareTitle } = Astro.props as AdvisoryLayoutProps;
+const s = messages[locale];
+const ja = locale === 'ja';
+const entries = [
+  { title: s.cause, description: ja ? '現象が起きる理由を確認します。' : 'Review why the incident occurs.', text: advisory.cause[locale] },
+  { title: s.affected, description: ja ? 'どの環境で現象が出たかを確認します。' : 'Check where the issue was observed.', text: advisory.affected[locale] },
+  { title: s.mitigation, description: ja ? '案内されている対応を確認します。' : 'Review the suggested response.', text: advisory.workaround[locale] },
+];
+---
+
+<main id="guided-case-review" class="theme-shell guided-case-review">
+  <ThemeNav {locale} {home} {alternate} iconSet={advisory.iconSet} design={advisory.design} />
+  <div class="case-desk">
+    <header class="case-cover">
+      <p class="theme-parody">{s.parody}</p>
+      <h1 class="advisory-title">{advisory.subject}<wbr />2shell</h1>
+      <p class="advisory-summary">{advisorySummary(advisory, locale)}</p>
+      <div class="case-stamp">
+        <strong>{advisory.severity.score.toFixed(1)}</strong>
+        <div><b>{s.score}</b><br />{s.ratings[advisory.severity.rating]}</div>
+      </div>
+      <p><b>{s.cve}</b> <code>{advisory.cve}</code></p>
+      <button type="button" class="case-start" data-review-guide hidden>{ja ? 'ガイドを始める' : 'Start guided review'}</button>
+    </header>
+    <ol class="case-tabs">
+      {entries.map(({ title, description, text }, index) => (
+        <li class="case-entry" data-review-stop data-guide-title={title} data-guide-description={description}>
+          <div class="case-entry-tab" aria-hidden="true">{index + 1}</div>
+          <div><h2>{title}</h2><p>{text}</p></div>
+        </li>
+      ))}
+    </ol>
+  </div>
+  <Evidence {advisory} evidence={advisory.evidence} {locale} />
+  <footer>
+    <ScoreDetails severity={advisory.severity} {locale} />
+    <ShareActions {locale} url={canonical} title={shareTitle} design={advisory.design} iconSet={advisory.iconSet} buttonClass="case-action" />
+  </footer>
+</main>
+
+<script is:inline type="module">
+  import { driver } from '/client/driver.js';
+
+  const launch = document.querySelector('[data-review-guide]');
+  if (launch) {
+    const ja = document.documentElement.lang === 'ja';
+    const steps = Array.from(document.querySelectorAll('[data-review-stop]'), element => ({
+      element,
+      popover: { title: element.dataset.guideTitle, description: element.dataset.guideDescription, side: 'bottom' },
+    }));
+    const guide = driver({
+      steps, showProgress: true, stagePadding: 5, stageRadius: 2, popoverClass: 'case-guide-popover',
+      animate: !matchMedia('(prefers-reduced-motion: reduce)').matches,
+      progressText: '{{current}} / {{total}}',
+      nextBtnText: ja ? '次へ' : 'Next', prevBtnText: ja ? '前へ' : 'Previous',
+      doneBtnText: ja ? '完了' : 'Done',
+      onDestroyed: () => queueMicrotask(() => launch.focus()),
+    });
+    launch.hidden = false;
+    launch.addEventListener('click', () => guide.drive());
+  }
+</script>

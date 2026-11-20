@@ -1,0 +1,20 @@
+---
+import { messages, type Locale } from '../../i18n/messages.ts';
+import { designs, type DesignId } from '../../advisories/designs.ts';
+
+interface Props {
+  locale: Locale;
+  home: URL;
+  alternate: URL;
+  design?: DesignId;
+}
+
+const { locale, home, alternate, design } = Astro.props;
+const publication = design ? designs[design].publication[locale] : undefined;
+const strings = messages[locale];
+---
+
+<header class="advisory-header">
+  <a href={home.href} class="publication" aria-label={strings.home}>parody2shell{publication && ' / ' + publication}</a>
+  <a class="d-btn d-btn-ghost d-btn-sm" href={alternate.href} hreflang={locale === 'ja' ? 'en' : 'ja'}>{strings.language}</a>
+</header>

@@ -1,0 +1,64 @@
+---
+import type { AdvisoryLayoutProps } from '../layout-props.ts';
+import { messages } from '../../../i18n/messages.ts';
+import { advisorySummary } from '../../../advisories/generate.ts';
+import { designs } from '../../../advisories/designs.ts';
+import Evidence from '../Evidence.astro';
+import ScoreDetails from '../ScoreDetails.astro';
+import ThemeNav from './ThemeNav.astro';
+import ShareActions from '../../ShareActions.astro';
+import CaseEvidence from '../case/CaseEvidence.astro';
+import { caseView } from '../case/case-view.ts';
+
+const { advisory, locale, home, alternate, canonical, shareTitle } = Astro.props as AdvisoryLayoutProps;
+const s = messages[locale];
+const ja = locale === 'ja';
+const view = caseView(advisory, locale);
+const find = (id: string) => view.sections.find(section => section.id === id);
+const [expected, observed, conditions, comparison] = ['expected', 'observed', 'conditions', 'comparison'].map(find);
+const headings = ja
+  ? ['はじめに', '方法', '結果', '考察', '対処', '参考文献']
+  : ['Introduction', 'Method', 'Results', 'Discussion', 'Mitigation', 'References'];
+---
+
+<main id="preprint-report" class="theme-shell preprint-report">
+  <ThemeNav {locale} {home} {alternate} iconSet={advisory.iconSet} design={advisory.design} />
+  <header class="preprint-head">
+    <p class="theme-parody">{s.parody}</p>
+    <h1 class="advisory-title">{advisory.subject}<wbr />2shell</h1>
+    <p class="author">{ja ? 'parody2shell セキュリティ対応窓口' : 'Security Response Desk, parody2shell'}<br /><time datetime={advisory.evidence.timeline.published}>{advisory.evidence.timeline.published}</time> · <code>{advisory.cve}</code></p>
+    <div class="abstract">
+      <h2>{s.abstract}</h2>
+      <p>{advisorySummary(advisory, locale)} {observed?.text}</p>
+    </div>
+  </header>
+  <nav class="preprint-toc" aria-label={s.contents}>
+    <h2>{s.contents}</h2>
+    <ol>{headings.map((heading, index) => <li><a href={'#preprint-' + (index + 1)}>{heading}</a></li>)}</ol>
+  </nav>
+  <article class="preprint-body">
+    <h2 id="preprint-1">1 {headings[0]}</h2>
+    <p>{advisory.cause[locale]}</p>
+    {expected && <p class="lemma" data-label={ja ? '想定' : 'Expectation'}>{expected.text}</p>}
+    <h2 id="preprint-2">2 {headings[1]}</h2>
+    <p>{view.note}</p>
+    {conditions && <p>{conditions.text}</p>}
+    <p>{advisory.affected[locale]}</p>
+    <h2 id="preprint-3">3 {headings[2]}</h2>
+    {observed && <p class="theorem" data-label={ja ? '所見' : 'Finding'}>{observed.text}</p>}
+    <CaseEvidence {advisory} {locale} form="versions" class="preprint-table" />
+    {advisory.evidence.format !== 'versions' && <Evidence {advisory} evidence={advisory.evidence} {locale} />}
+    <h2 id="preprint-4">4 {headings[3]}</h2>
+    {comparison && <p>{comparison.text}</p>}
+    <div class="proof"><p>{ja ? '同じ条件で両方の版を比べ、影響を受ける版だけでシェルが現れることを確かめた。' : 'Both releases were compared under the same condition, and only the affected release reached a shell.'}</p></div>
+    <h2 id="preprint-5">5 {headings[4]}</h2>
+    <p>{advisory.workaround[locale]}</p>
+    <ScoreDetails severity={advisory.severity} {locale} />
+    <h2 id="preprint-6">6 {headings[5]}</h2>
+    <ol class="preprint-references">
+      <li><code>{advisory.cve}</code>. {designs[advisory.design].publication[locale]}, parody2shell, {advisory.evidence.timeline.published}.</li>
+      <li>{s.cvssCredit}</li>
+    </ol>
+    <ShareActions {locale} url={canonical} title={shareTitle} design={advisory.design} iconSet={advisory.iconSet} buttonClass="preprint-action" />
+  </article>
+</main>

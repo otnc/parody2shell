@@ -1,0 +1,21 @@
+---
+import type { Advisory } from '../../advisories/generate.ts';
+import { messages, type Locale } from '../../i18n/messages.ts';
+import ScoreDetails from './ScoreDetails.astro';
+
+interface Props {
+  severity: Advisory['severity'];
+  locale: Locale;
+}
+
+const { severity, locale } = Astro.props;
+const strings = messages[locale];
+---
+
+<aside class="d-card severity-card" aria-label={strings.severity}>
+  <div class="severity-main">
+    <span class="severity-value">{severity.score.toFixed(1)}</span>
+    <div><p>{strings.score}</p><strong>{strings.ratings[severity.rating]}</strong></div>
+  </div>
+  <ScoreDetails {severity} {locale} />
+</aside>

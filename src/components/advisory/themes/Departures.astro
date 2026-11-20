@@ -1,0 +1,37 @@
+---
+import type { AdvisoryLayoutProps } from '../layout-props.ts';
+import { messages } from '../../../i18n/messages.ts';
+import { advisorySummary } from '../../../advisories/generate.ts';
+import Evidence from '../Evidence.astro';
+import ScoreDetails from '../ScoreDetails.astro';
+import ThemeNav from './ThemeNav.astro';
+import ShareActions from '../../ShareActions.astro';
+
+const { advisory, locale, home, alternate, canonical, shareTitle } = Astro.props as AdvisoryLayoutProps;
+const s = messages[locale];
+const labels = locale === 'ja' ? ['運行状況', '注意', '停車中'] : ['Service notes', 'Check', 'Held'];
+---
+
+<main id="departure-board" class="theme-shell departure-board">
+  <ThemeNav {locale} {home} {alternate} iconSet={advisory.iconSet} design={advisory.design} />
+  <header class="departure-head">
+    <div><p class="theme-parody">{s.parody}</p><h1 class="advisory-title">{advisory.title}</h1></div>
+    <div class="departure-score"><span>{s.score}</span><strong>{advisory.severity.score.toFixed(1)}</strong></div>
+  </header>
+  <div class="departure-strip"><p class="advisory-summary">{advisorySummary(advisory, locale)}</p><code>{advisory.cve}</code></div>
+  <div class="evidence-table-wrap departure-platforms">
+    <table class="pure-table pure-table-horizontal">
+      <caption>{labels[0]}</caption>
+      <tbody>
+        <tr><th scope="row">{labels[1]}</th><td><strong>{s.affected}</strong><p>{advisory.affected[locale]}</p></td></tr>
+        <tr><th scope="row">{labels[2]}</th><td><strong>{s.cause}</strong><p>{advisory.cause[locale]}</p></td></tr>
+        <tr><th scope="row">{s.fixed}</th><td><strong>{s.mitigation}</strong><p>{advisory.workaround[locale]}</p></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <Evidence {advisory} evidence={advisory.evidence} {locale} />
+  <footer>
+    <ScoreDetails severity={advisory.severity} {locale} />
+    <ShareActions {locale} url={canonical} title={shareTitle} design={advisory.design} iconSet={advisory.iconSet} buttonClass="pure-button" />
+  </footer>
+</main>

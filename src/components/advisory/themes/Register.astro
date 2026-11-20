@@ -1,0 +1,37 @@
+---
+import { advisorySummary } from '../../../advisories/generate.ts';
+import { messages } from '../../../i18n/messages.ts';
+import ShareActions from '../../ShareActions.astro';
+import Evidence from '../Evidence.astro';
+import ScoreDetails from '../ScoreDetails.astro';
+import type { AdvisoryLayoutProps as Props } from '../layout-props.ts';
+import ThemeNav from './ThemeNav.astro';
+
+const { advisory, locale, home, alternate, canonical, shareTitle } = Astro.props;
+const s = messages[locale];
+const fields = [
+  [s.affected, advisory.affected[locale]], [s.cause, advisory.cause[locale]], [s.mitigation, advisory.workaround[locale]],
+];
+---
+<main class="theme-shell registry-page" id="registry-record">
+  <ThemeNav iconSet={advisory.iconSet} {locale} {home} {alternate} design={advisory.design} />
+  <article class="panel">
+    <header class="panel-header">
+      <p class="label label-secondary">{s.parody}</p>
+      <h1 class="advisory-title">{advisory.title}</h1>
+      <p class="advisory-summary">{advisorySummary(advisory, locale)}</p>
+    </header>
+    <div class="panel-body">
+      <dl class="registry-fields">
+        <div><dt>{s.cve}</dt><dd><code>{advisory.cve}</code></dd></div>
+        <div><dt>{s.score}</dt><dd>{advisory.severity.score.toFixed(1)} · {s.ratings[advisory.severity.rating]}</dd></div>
+        {fields.map(([key, value]) => <div class="tile"><dt>{key}</dt><dd>{value}</dd></div>)}
+      </dl>
+      <Evidence {advisory} evidence={advisory.evidence} {locale} />
+      <ScoreDetails severity={advisory.severity} {locale} />
+    </div>
+    <footer class="panel-footer">
+      <ShareActions iconSet={advisory.iconSet} {locale} url={canonical} title={shareTitle} design={advisory.design} buttonClass="btn btn-sm" />
+    </footer>
+  </article>
+</main>

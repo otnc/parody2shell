@@ -1,0 +1,32 @@
+---
+import type { AdvisoryLayoutProps } from '../layout-props.ts';
+import { messages } from '../../../i18n/messages.ts';
+import { advisorySummary } from '../../../advisories/generate.ts';
+import Evidence from '../Evidence.astro';
+import ScoreDetails from '../ScoreDetails.astro';
+import ThemeNav from './ThemeNav.astro';
+import ShareActions from '../../ShareActions.astro';
+
+const { advisory, locale, home, alternate, canonical, shareTitle } = Astro.props as AdvisoryLayoutProps;
+const s = messages[locale];
+const fields = [[s.cve, advisory.cve], [s.score, advisory.severity.score.toFixed(1)], [s.severity, s.ratings[advisory.severity.rating]]];
+---
+
+<main id="claim-office" class="theme-shell claim-office">
+  <ThemeNav {locale} {home} {alternate} iconSet={advisory.iconSet} design={advisory.design} />
+  <article class="claim-form">
+    <header><p class="theme-parody">{s.parody}</p><h1 class="advisory-title">{advisory.title}</h1></header>
+    <dl class="claim-fields">{fields.map(([term, value]) => <div><dt>{term}</dt><dd>{value}</dd></div>)}</dl>
+    <fieldset><legend>{s.summary}</legend><p class="advisory-summary">{advisorySummary(advisory, locale)}</p></fieldset>
+    <fieldset><legend>{s.cause}</legend><p>{advisory.cause[locale]}</p></fieldset>
+    <div class="claim-response">
+      <fieldset><legend>{s.affected}</legend><p>{advisory.affected[locale]}</p></fieldset>
+      <fieldset><legend>{s.mitigation}</legend><p>{advisory.workaround[locale]}</p></fieldset>
+    </div>
+    <Evidence {advisory} evidence={advisory.evidence} {locale} />
+    <footer>
+      <ScoreDetails severity={advisory.severity} {locale} />
+      <ShareActions {locale} url={canonical} title={shareTitle} design={advisory.design} iconSet={advisory.iconSet} buttonClass="button button-outline" />
+    </footer>
+  </article>
+</main>

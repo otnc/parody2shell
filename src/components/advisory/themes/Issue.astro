@@ -1,0 +1,33 @@
+---
+import { advisorySummary } from '../../../advisories/generate.ts';
+import { messages } from '../../../i18n/messages.ts';
+import ShareActions from '../../ShareActions.astro';
+import Evidence from '../Evidence.astro';
+import ScoreDetails from '../ScoreDetails.astro';
+import type { AdvisoryLayoutProps as Props } from '../layout-props.ts';
+import ThemeNav from './ThemeNav.astro';
+
+const { advisory, locale, home, alternate, canonical, shareTitle } = Astro.props;
+const s = messages[locale];
+---
+<main class="theme-shell issue-thread" id="issue-thread">
+  <ThemeNav iconSet={advisory.iconSet} {locale} {home} {alternate} design={advisory.design} />
+  <header class="issue-title">
+    <div class="issue-labels"><span class="Label Label--success">{s.incidentPublished}</span><span class="Label">{s.parody}</span></div>
+    <h1 class="advisory-title">{advisory.title}</h1>
+  </header>
+  <div class="issue-grid">
+    <ol class="issue-events">
+      <li class="Box"><h2 class="Box-header">{s.summary}</h2><div class="Box-body"><p class="advisory-summary">{advisorySummary(advisory, locale)}</p></div></li>
+      <li class="Box"><h2 class="Box-header">{s.cause}</h2><div class="Box-body"><p>{advisory.cause[locale]}</p><p>{advisory.affected[locale]}</p></div></li>
+      <li class="Box"><h2 class="Box-header">{s.mitigation}</h2><div class="Box-body"><p>{advisory.workaround[locale]}</p></div></li>
+    </ol>
+    <aside class="issue-meta">
+      <p>{s.cve}<br /><code>{advisory.cve}</code></p>
+      <p>{s.score}<br /><strong>{advisory.severity.score.toFixed(1)} · {s.ratings[advisory.severity.rating]}</strong></p>
+      <ScoreDetails severity={advisory.severity} {locale} />
+      <ShareActions iconSet={advisory.iconSet} {locale} url={canonical} title={shareTitle} design={advisory.design} buttonClass="btn btn-sm" />
+    </aside>
+  </div>
+  <Evidence {advisory} evidence={advisory.evidence} {locale} />
+</main>

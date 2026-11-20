@@ -1,0 +1,68 @@
+---
+import type { AdvisoryLayoutProps } from '../layout-props.ts';
+import { messages } from '../../../i18n/messages.ts';
+import { advisorySummary } from '../../../advisories/generate.ts';
+import Evidence from '../Evidence.astro';
+import ScoreDetails from '../ScoreDetails.astro';
+import ThemeNav from './ThemeNav.astro';
+import ShareActions from '../../ShareActions.astro';
+import CaseEvidence from '../case/CaseEvidence.astro';
+import { caseView } from '../case/case-view.ts';
+
+const { advisory, locale, home, alternate, canonical, shareTitle } = Astro.props as AdvisoryLayoutProps;
+const s = messages[locale];
+const ja = locale === 'ja';
+const view = caseView(advisory, locale);
+const text = (id: string) => view.sections.find(section => section.id === id);
+const before = text('observed');
+const after = text('comparison');
+---
+
+<main id="fix-ceremony" class="theme-shell fix-ceremony">
+  <div class="ceremony-sky" data-ceremony-sky aria-hidden="true"></div>
+  <ThemeNav {locale} {home} {alternate} iconSet={advisory.iconSet} design={advisory.design} />
+  <header class="ceremony-hero">
+    <p class="theme-parody">{s.parody}</p>
+    <p class="ceremony-ribbon">{ja ? '修正版' : 'Fixed in'} <strong>{advisory.evidence.fixedVersion}</strong></p>
+    <h1 class="advisory-title">{advisory.subject}<wbr />2shell</h1>
+    <p class="advisory-summary">{advisorySummary(advisory, locale)}</p>
+    <button type="button" class="ceremony-launch" data-ceremony-launch hidden>{ja ? '修正を祝う' : 'Celebrate the fix'}</button>
+  </header>
+  <div class="ceremony-compare">
+    {before && <section data-side="before"><h2>{before.title} <code>{advisory.evidence.affectedVersion}</code></h2><p>{before.text}</p></section>}
+    {after && <section data-side="after"><h2>{after.title} <code>{advisory.evidence.fixedVersion}</code></h2><p>{after.text}</p></section>}
+  </div>
+  <div class="ceremony-program">
+    <CaseEvidence {advisory} {locale} form="timeline" />
+    <section class="ceremony-notes">
+      <h2>{s.cause}</h2><p>{advisory.cause[locale]}</p>
+      {text('expected') && <><h2>{text('expected')!.title}</h2><p>{text('expected')!.text}</p></>}
+      {text('conditions') && <><h2>{text('conditions')!.title}</h2><p>{text('conditions')!.text}</p></>}
+      <h2>{s.affected}</h2><p>{advisory.affected[locale]}</p>
+      <h2>{s.mitigation}</h2><p>{advisory.workaround[locale]}</p>
+    </section>
+  </div>
+  {advisory.evidence.format !== 'timeline' && <Evidence {advisory} evidence={advisory.evidence} {locale} />}
+  <footer class="ceremony-footer">
+    <p><b>{s.cve}</b> <code>{advisory.cve}</code> · <b>{s.score}</b> {advisory.severity.score.toFixed(1)} · {s.ratings[advisory.severity.rating]}</p>
+    <ScoreDetails severity={advisory.severity} {locale} />
+    <ShareActions {locale} url={canonical} title={shareTitle} design={advisory.design} iconSet={advisory.iconSet} buttonClass="ceremony-action" />
+  </footer>
+</main>
+
+<script is:inline type="module">
+  import { Fireworks } from '/client/fireworks.js';
+
+  const launch = document.querySelector('[data-ceremony-launch]');
+  const sky = document.querySelector('[data-ceremony-sky]');
+  if (launch && sky && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const show = new Fireworks(sky, { intensity: 18, traceSpeed: 4, explosion: 6, hue: { min: 20, max: 60 }, sound: { enabled: false } });
+    let timer;
+    launch.hidden = false;
+    launch.addEventListener('click', () => {
+      clearTimeout(timer);
+      show.start();
+      timer = setTimeout(() => show.waitStop(), 3500);
+    });
+  }
+</script>

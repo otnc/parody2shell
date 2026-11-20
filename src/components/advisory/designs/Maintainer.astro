@@ -1,0 +1,44 @@
+---
+import ShareActions from '../../ShareActions.astro';
+import AdvisoryHeader from '../AdvisoryHeader.astro';
+import Evidence from '../Evidence.astro';
+import ScoreDetails from '../ScoreDetails.astro';
+import { advisorySummary } from '../../../advisories/generate.ts';
+import { messages } from '../../../i18n/messages.ts';
+import type { AdvisoryLayoutProps as Props } from '../layout-props.ts';
+
+const { advisory, locale, canonical, alternate, home, shareTitle } = Astro.props;
+const strings = messages[locale];
+const { evidence, severity } = advisory;
+---
+
+<AdvisoryHeader {locale} {alternate} {home} design={advisory.design} />
+<main class="maintainer-note">
+  <header class="maintainer-heading">
+    <div><span class="d-badge d-badge-outline">{strings.parody}</span><p>{strings.releaseNotes}</p><h1 class="advisory-title">{advisory.title}</h1></div>
+    <ShareActions iconSet={advisory.iconSet} {locale} url={canonical} title={shareTitle} design="maintainer" />
+  </header>
+  <article class="maintainer-release" aria-labelledby="release-notes">
+    <div class="release-tag"><span>{strings.fixed}</span><code>{evidence.fixedVersion}</code></div>
+    <div class="release-content">
+      <div class="release-metadata">
+        <span>{strings.cve} <code>{advisory.cve}</code></span>
+      </div>
+      <h2 id="release-notes">{strings.releaseChanges}</h2>
+      <p class="advisory-summary">{advisorySummary(advisory, locale)}</p>
+      <ul class="release-changes">
+        <li><strong>{strings.affected}</strong><p>{advisory.affected[locale]}</p></li>
+        <li><strong>{strings.mitigation}</strong><p>{advisory.workaround[locale]}</p></li>
+      </ul>
+      <details class="d-collapse d-collapse-arrow release-disclosure">
+        <summary class="d-collapse-title">{strings.cause}</summary>
+        <p class="d-collapse-content">{advisory.cause[locale]}</p>
+      </details>
+      <div class="release-risk">
+        <p>{strings.score} <strong>{severity.score.toFixed(1)} · {strings.ratings[severity.rating]}</strong></p>
+        <ScoreDetails {severity} {locale} />
+      </div>
+      <Evidence {advisory} {evidence} {locale} />
+    </div>
+  </article>
+</main>

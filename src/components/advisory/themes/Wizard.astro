@@ -1,0 +1,102 @@
+---
+import type { AdvisoryLayoutProps } from '../layout-props.ts';
+import { messages } from '../../../i18n/messages.ts';
+import { advisorySummary } from '../../../advisories/generate.ts';
+import Evidence from '../Evidence.astro';
+import ScoreDetails from '../ScoreDetails.astro';
+import ThemeNav from './ThemeNav.astro';
+import ShareActions from '../../ShareActions.astro';
+import CaseEvidence from '../case/CaseEvidence.astro';
+import { caseView } from '../case/case-view.ts';
+
+const { advisory, locale, home, alternate, canonical, shareTitle } = Astro.props as AdvisoryLayoutProps;
+const s = messages[locale];
+const ja = locale === 'ja';
+const view = caseView(advisory, locale);
+const steps = ja ? ['はじめに', '影響の確認', '詳細', '完了'] : ['Welcome', 'Check your system', 'Details', 'Finish'];
+---
+
+<main id="update-wizard" class="theme-shell update-wizard">
+  <ThemeNav {locale} {home} {alternate} iconSet={advisory.iconSet} design={advisory.design} />
+  <div class="window wizard-window">
+    <div class="title-bar">
+      <div class="title-bar-text">{ja ? '更新ウィザード' : 'Update Wizard'} — {advisory.cve}</div>
+      <div class="title-bar-controls" aria-hidden="true"><button type="button" aria-label="Minimize" tabindex="-1"></button><button type="button" aria-label="Close" tabindex="-1"></button></div>
+    </div>
+    <div class="window-body wizard-body">
+      <aside class="wizard-banner">
+        <span class="wizard-glyph" aria-hidden="true">&gt;_</span>
+        <ol class="wizard-steps">{steps.map((step, index) => <li data-wizard-marker={index} aria-current={index === 0 ? 'step' : undefined}>{step}</li>)}</ol>
+      </aside>
+      <div class="wizard-pages">
+        <section class="wizard-page" data-wizard-page aria-labelledby="wizard-step-1">
+          <p class="theme-parody">{s.parody}</p>
+          <h1 class="advisory-title">{advisory.subject}<wbr />2shell</h1>
+          <h2 id="wizard-step-1" class="sr-only">{steps[0]}</h2>
+          <p class="advisory-summary">{advisorySummary(advisory, locale)}</p>
+          <p>{ja ? '続けるには［次へ］を押してください。' : 'To continue, click Next.'}</p>
+        </section>
+        <section class="wizard-page" data-wizard-page aria-labelledby="wizard-step-2">
+          <h2 id="wizard-step-2">{steps[1]}</h2>
+          <fieldset>
+            <legend>{s.affected}</legend>
+            <p>{advisory.affected[locale]}</p>
+          </fieldset>
+          <CaseEvidence {advisory} {locale} form="versions" />
+        </section>
+        <section class="wizard-page" data-wizard-page aria-labelledby="wizard-step-3">
+          <h2 id="wizard-step-3">{steps[2]}</h2>
+          <p>{advisory.cause[locale]}</p>
+          <CaseEvidence {advisory} {locale} form="trace" />
+          {advisory.evidence.format !== 'versions' && advisory.evidence.format !== 'trace' && <Evidence {advisory} evidence={advisory.evidence} {locale} />}
+        </section>
+        <section class="wizard-page" data-wizard-page aria-labelledby="wizard-step-4">
+          <h2 id="wizard-step-4">{steps[3]}</h2>
+          <fieldset>
+            <legend>{s.mitigation}</legend>
+            <p>{advisory.workaround[locale]}</p>
+          </fieldset>
+          <p class="wizard-score"><b>{s.score}</b> {advisory.severity.score.toFixed(1)} · {s.ratings[advisory.severity.rating]}</p>
+          <ScoreDetails severity={advisory.severity} {locale} />
+          <ShareActions {locale} url={canonical} title={shareTitle} design={advisory.design} iconSet={advisory.iconSet} buttonClass="wizard-action" />
+        </section>
+        <div class="field-row wizard-buttons" data-wizard-buttons hidden>
+          <button type="button" data-wizard-step="-1">{ja ? '< 戻る' : '< Back'}</button>
+          <button type="button" data-wizard-step="1">{ja ? '次へ >' : 'Next >'}</button>
+        </div>
+      </div>
+    </div>
+    <div class="status-bar">
+      <p class="status-bar-field">{s.releaseRoles.fixed}: {advisory.evidence.fixedVersion}</p>
+      <p class="status-bar-field" data-wizard-status>{steps.length} {ja ? '手順' : 'steps'}</p>
+    </div>
+  </div>
+</main>
+
+<script is:inline>
+  const pages = [...document.querySelectorAll('[data-wizard-page]')];
+  const buttons = document.querySelector('[data-wizard-buttons]');
+  const status = document.querySelector('[data-wizard-status]');
+  const markers = [...document.querySelectorAll('[data-wizard-marker]')];
+  if (buttons && status && pages.length) {
+    const [back, next] = buttons.querySelectorAll('button');
+    let current = 0;
+    const show = (index, focus) => {
+      current = Math.max(0, Math.min(pages.length - 1, index));
+      pages.forEach((page, position) => { page.hidden = position !== current; });
+      markers.forEach((marker, position) => marker.toggleAttribute('aria-current', position === current));
+      markers[current].setAttribute('aria-current', 'step');
+      back.disabled = current === 0;
+      next.disabled = current === pages.length - 1;
+      status.textContent = current + 1 + ' / ' + pages.length;
+      if (focus) pages[current].querySelector('h2').focus();
+    };
+    pages.forEach(page => page.querySelector('h2').setAttribute('tabindex', '-1'));
+    buttons.hidden = false;
+    buttons.addEventListener('click', (event) => {
+      const step = event.target.closest('[data-wizard-step]');
+      if (step) show(current + Number(step.dataset.wizardStep), true);
+    });
+    show(0, false);
+  }
+</script>

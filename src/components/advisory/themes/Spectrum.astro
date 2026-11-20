@@ -1,0 +1,46 @@
+---
+import type { AdvisoryLayoutProps } from '../layout-props.ts';
+import { messages } from '../../../i18n/messages.ts';
+import { advisorySummary } from '../../../advisories/generate.ts';
+import ScoreDetails from '../ScoreDetails.astro';
+import ThemeNav from './ThemeNav.astro';
+import ShareActions from '../../ShareActions.astro';
+
+const { advisory, locale, home, alternate, canonical, shareTitle } = Astro.props as AdvisoryLayoutProps;
+const s = messages[locale];
+const { rounds, trials } = advisory.evidence;
+---
+
+<main id="activation-spectrum" class="theme-shell activation-spectrum">
+  <ThemeNav {locale} {home} {alternate} iconSet={advisory.iconSet} design={advisory.design} />
+  <header class="spectrum-heading">
+    <p class="theme-parody">{s.parody}</p>
+    <h1 class="advisory-title">{advisory.title}</h1>
+    <p class="advisory-summary">{advisorySummary(advisory, locale)}</p>
+  </header>
+  <figure class="spectrum-figure" aria-labelledby="spectrum-caption">
+    <figcaption id="spectrum-caption"><b>{s.evidenceTimeline}</b> <span>{s.labCaption}</span></figcaption>
+    <table class="charts-css column show-labels show-primary-axis show-4-secondary-axes">
+      <caption>{s.evidenceTimeline}</caption>
+      <tbody>{rounds.map((count, index) => (
+        <tr>
+          <th scope="row">{locale === 'ja' ? '第' + (index + 1) + '回' : 'Run ' + (index + 1)}</th>
+          <td style={{ '--size': count / trials }}><span class="data">{count}</span></td>
+        </tr>
+      ))}</tbody>
+    </table>
+  </figure>
+  <dl class="spectrum-ledger">
+    <div><dt>{s.cve}</dt><dd><code>{advisory.cve}</code></dd></div>
+    <div><dt>{s.score}</dt><dd>{advisory.severity.score.toFixed(1)} <small>{s.ratings[advisory.severity.rating]}</small></dd></div>
+    <div><dt>{s.fixed}</dt><dd>{advisory.evidence.fixedVersion}</dd></div>
+  </dl>
+  <div class="spectrum-notes">
+    <section><h2>{s.cause}</h2><p>{advisory.cause[locale]}</p></section>
+    <section><h2>{s.affected}</h2><p>{advisory.affected[locale]}</p><h2>{s.mitigation}</h2><p>{advisory.workaround[locale]}</p></section>
+  </div>
+  <footer>
+    <ScoreDetails severity={advisory.severity} {locale} />
+    <ShareActions {locale} url={canonical} title={shareTitle} design={advisory.design} iconSet={advisory.iconSet} buttonClass="spectrum-action" />
+  </footer>
+</main>

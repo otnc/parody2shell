@@ -1,0 +1,26 @@
+---
+import { buttonVariants } from '../components/ui/button';
+import Document from '../layouts/Document.astro';
+import { localeForPath, messages } from '../i18n/messages.ts';
+import { matchSiteHost, siteUrl } from '../routing/hostname.ts';
+import { designForLabel } from '../advisories/generate.ts';
+
+Astro.response.status = 404;
+const locale = localeForPath(Astro.originPathname);
+const strings = messages[locale];
+const host = matchSiteHost(new URL(Astro.request.url).hostname);
+const design = host.kind === 'advisory' ? await designForLabel(host.label) : 'home';
+const homePath = locale === 'ja' ? '/ja' : '/';
+const base = host.kind === 'unknown' ? '2shell.cc' : host.base;
+const home = siteUrl(Astro.url, base, homePath);
+const destination = host.kind === 'advisory' ? siteUrl(Astro.url, base, homePath, host.label) : home;
+---
+
+<Document {locale} title={strings.notFound + ' | parody2shell'} {design}>
+  <main class="not-found">
+    <p>404</p>
+    <h1>{strings.notFound}</h1>
+    <p>{strings.notFoundBody}</p>
+    <a href={destination.href} class={host.kind === 'advisory' ? 'd-btn d-btn-primary' : buttonVariants()}>{host.kind === 'advisory' ? strings.backToAdvisory : strings.backHome}</a>
+  </main>
+</Document>

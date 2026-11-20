@@ -1,0 +1,87 @@
+---
+import type { AdvisoryLayoutProps } from '../layout-props.ts';
+import { messages } from '../../../i18n/messages.ts';
+import { advisorySummary } from '../../../advisories/generate.ts';
+import Evidence from '../Evidence.astro';
+import ScoreDetails from '../ScoreDetails.astro';
+import ThemeNav from './ThemeNav.astro';
+import ShareActions from '../../ShareActions.astro';
+import { caseView } from '../case/case-view.ts';
+
+const { advisory, locale, home, alternate, canonical, shareTitle } = Astro.props as AdvisoryLayoutProps;
+const s = messages[locale];
+const ja = locale === 'ja';
+const view = caseView(advisory, locale);
+const text = (id: string) => view.sections.find(section => section.id === id)?.text;
+const columns = [
+  { title: s.observed, tone: 'yellow', notes: [advisorySummary(advisory, locale), text('observed')] },
+  { title: s.expected, tone: 'blue', notes: [text('expected')] },
+  { title: s.cause, tone: 'pink', notes: [advisory.cause[locale], text('conditions')] },
+  { title: s.mitigation, tone: 'green', notes: [advisory.workaround[locale], text('comparison')] },
+];
+const rounds = advisory.evidence.rounds;
+const roundLabel = ja ? '回目' : 'Round ';
+---
+
+<main id="incident-whiteboard" class="theme-shell incident-whiteboard">
+  <ThemeNav {locale} {home} {alternate} iconSet={advisory.iconSet} design={advisory.design} />
+  <div class="whiteboard-surface">
+    <header class="whiteboard-heading">
+      <p class="theme-parody">{s.parody}</p>
+      <h1 class="advisory-title">{advisory.subject}<wbr />2shell</h1>
+      <p><time datetime={advisory.evidence.timeline.published}>{advisory.evidence.timeline.published}</time> · <code>{advisory.cve}</code> · {s.score} {advisory.severity.score.toFixed(1)}</p>
+    </header>
+    <div class="whiteboard-columns">
+      {columns.map(column => (
+        <section class="whiteboard-column">
+          <h2>{column.title}</h2>
+          {column.notes.filter(Boolean).map((note, index) => <p class="whiteboard-note" data-tone={column.tone} style={{ '--tilt': ((index % 2 ? 1.4 : -1.1) * (column.tone.length % 3 + 1) / 2) + 'deg' }}>{note}</p>)}
+        </section>
+      ))}
+    </div>
+    <figure class="whiteboard-chart">
+      <figcaption>{s.evidenceTimeline}</figcaption>
+      <svg viewBox="0 0 360 180" data-rough-chart data-rounds={rounds.join(',')} data-trials={advisory.evidence.trials} aria-hidden="true"></svg>
+      <table class="whiteboard-table">
+        <caption class="sr-only">{s.evidenceTimeline}</caption>
+        <tbody>
+          <tr>{rounds.map((_, index) => <th scope="col">{ja ? (index + 1) + roundLabel : roundLabel + (index + 1)}</th>)}</tr>
+          <tr>{rounds.map(count => <td>{count}/{advisory.evidence.trials}</td>)}</tr>
+        </tbody>
+      </table>
+    </figure>
+  </div>
+  <section class="whiteboard-affected"><h2>{s.affected}</h2><p>{advisory.affected[locale]}</p></section>
+  {advisory.evidence.format !== 'line' && <Evidence {advisory} evidence={advisory.evidence} {locale} />}
+  <footer class="whiteboard-footer">
+    <ScoreDetails severity={advisory.severity} {locale} />
+    <ShareActions {locale} url={canonical} title={shareTitle} design={advisory.design} iconSet={advisory.iconSet} buttonClass="whiteboard-action" />
+  </footer>
+</main>
+
+<script is:inline type="module">
+  import rough from '/client/roughjs.js';
+
+  const svg = document.querySelector('[data-rough-chart]');
+  if (svg) {
+    const rounds = svg.dataset.rounds.split(',').map(Number);
+    const trials = Number(svg.dataset.trials);
+    const canvas = rough.svg(svg);
+    const ink = getComputedStyle(svg).color;
+    const accent = getComputedStyle(document.documentElement).getPropertyValue('--library-accent').trim() || '#d9342b';
+    svg.append(canvas.line(28, 150, 340, 150, { stroke: ink, roughness: 1.6 }));
+    svg.append(canvas.line(28, 12, 28, 150, { stroke: ink, roughness: 1.6 }));
+    rounds.forEach((count, index) => {
+      const height = count / trials * 130;
+      const x = 44 + index * 49;
+      svg.append(canvas.rectangle(x, 150 - height, 30, Math.max(height, 1), { fill: accent, fillStyle: 'hachure', hachureGap: 5, stroke: ink, roughness: 1.4, seed: index + 1 }));
+      const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      label.setAttribute('x', String(x + 15));
+      label.setAttribute('y', String(144 - height));
+      label.setAttribute('text-anchor', 'middle');
+      label.textContent = String(count);
+      svg.append(label);
+    });
+    svg.closest('figure').classList.add('is-drawn');
+  }
+</script>

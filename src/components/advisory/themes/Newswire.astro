@@ -1,0 +1,41 @@
+---
+import { advisorySummary } from '../../../advisories/generate.ts';
+import { messages } from '../../../i18n/messages.ts';
+import ShareActions from '../../ShareActions.astro';
+import Evidence from '../Evidence.astro';
+import ScoreDetails from '../ScoreDetails.astro';
+import type { AdvisoryLayoutProps as Props } from '../layout-props.ts';
+import ThemeNav from './ThemeNav.astro';
+
+const { advisory, locale, home, alternate, canonical, shareTitle } = Astro.props;
+const s = messages[locale];
+---
+<main class="theme-shell news-edition" id="news-edition">
+  <ThemeNav iconSet={advisory.iconSet} {locale} {home} {alternate} design={advisory.design} />
+  <header class="news-masthead">
+    <p>{locale === 'ja' ? '脆弱性情報' : 'Vulnerability Advisory'}</p>
+    <span class="tag is-danger is-light">{s.parody}</span>
+  </header>
+  <article>
+    <header class="news-headline">
+      <h1 class="advisory-title">{advisory.title}</h1>
+      <p class="advisory-summary">{advisorySummary(advisory, locale)}</p>
+    </header>
+    <div class="news-columns">
+      <div class="news-copy">
+        <h2>{s.cause}</h2><p>{advisory.cause[locale]}</p>
+        <h2>{s.affected}</h2><p>{advisory.affected[locale]}</p>
+      </div>
+      <aside class="message is-danger">
+        <div class="message-header"><p>{s.mitigation}</p></div>
+        <div class="message-body"><p>{advisory.workaround[locale]}</p>
+          <p>{s.cve} <code>{advisory.cve}</code></p>
+          <p>{s.score} <strong>{advisory.severity.score.toFixed(1)} · {s.ratings[advisory.severity.rating]}</strong></p>
+          <ScoreDetails severity={advisory.severity} {locale} />
+        </div>
+      </aside>
+    </div>
+    <Evidence {advisory} evidence={advisory.evidence} {locale} />
+  </article>
+  <footer><ShareActions iconSet={advisory.iconSet} {locale} url={canonical} title={shareTitle} design={advisory.design} buttonClass="button is-small is-outlined is-danger" /></footer>
+</main>

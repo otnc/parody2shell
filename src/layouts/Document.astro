@@ -1,0 +1,87 @@
+---
+import '@fontsource-variable/geist';
+import '@fontsource-variable/geist-mono';
+import '../styles/global.css';
+import { developmentLibraryCss, librarySheets } from '../styles/library-sheets.ts';
+import { designs, type DesignId } from '../advisories/designs.ts';
+import { designThemes } from '../advisories/v1/designs.ts';
+import { fonts } from '../advisories/visuals.ts';
+import SiteFooter from '../components/SiteFooter.astro';
+import { shortenSocialText } from '../og/text.ts';
+import type { Locale } from '../i18n/messages.ts';
+
+interface Props {
+  locale: Locale;
+  title: string;
+  design: DesignId | 'home';
+  description?: string;
+  canonical?: URL;
+  alternate?: URL;
+  image?: URL;
+  imageAlt?: string;
+  displayFont?: keyof typeof fonts;
+  bodyFont?: keyof typeof fonts;
+}
+
+const { locale, title, description, design, canonical, alternate, image, imageAlt = title, displayFont, bodyFont } = Astro.props;
+const themes: Partial<Record<DesignId, string>> = { ...designThemes, manual: 'light', newswire: 'light' };
+const theme = design === 'home' ? undefined : themes[design];
+const stylesheet = design === 'home' ? undefined : librarySheets[design];
+const inlineSheet = design === 'home' ? undefined : await developmentLibraryCss(design);
+// Every theme after the daisyUI four uses the shared palette variables, with or without a library stylesheet.
+const palette = design !== 'home' && !(design in designThemes) ? designs[design] : undefined;
+const customProperties = {
+  ...(palette && {
+    '--library-background': palette.background, '--library-ink': palette.ink,
+    '--library-panel': palette.panel, '--library-accent': palette.accent,
+  }),
+  ...(displayFont && { '--advisory-display': fonts[displayFont] }),
+  ...(bodyFont && { '--advisory-body': fonts[bodyFont] }),
+};
+const isAdvisory = design !== 'home';
+const openGraphLocale = locale === 'ja' ? 'ja_JP' : 'en_US';
+---
+
+<!doctype html>
+<html lang={locale} data-design={design} data-theme={theme} data-color-mode={design === 'issue' ? 'light' : undefined} data-light-theme={design === 'issue' ? 'light' : undefined} data-library={palette ? '' : undefined} data-display-font={displayFont} data-body-font={bodyFont} style={customProperties} class:list={[{ dark: design === 'home' }]}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    {inlineSheet ? (
+      <style is:inline data-ui-library={design} set:html={inlineSheet}></style>
+    ) : stylesheet && <link rel="stylesheet" href={stylesheet} data-ui-library={design} />}
+    {description && <meta name="description" content={description} />}
+    {canonical && <link rel="canonical" href={canonical.href} />}
+    {alternate && canonical && (
+      <>
+        <link rel="alternate" hreflang={locale} href={canonical.href} />
+        <link rel="alternate" hreflang={locale === 'ja' ? 'en' : 'ja'} href={alternate.href} />
+      </>
+    )}
+    {!canonical && <meta name="robots" content="noindex" />}
+    {canonical && image && description && (
+      <>
+        <meta property="og:type" content={isAdvisory ? 'article' : 'website'} />
+        <meta property="og:site_name" content="parody2shell" />
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
+        <meta property="og:url" content={canonical.href} />
+        <meta property="og:locale" content={openGraphLocale} />
+        <meta property="og:locale:alternate" content={locale === 'ja' ? 'en_US' : 'ja_JP'} />
+        <meta property="og:image" content={image.href} />
+        {image.protocol === 'https:' && <meta property="og:image:secure_url" content={image.href} />}
+        <meta property="og:image:type" content="image/png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content={imageAlt} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={shortenSocialText(title, 70)} />
+        <meta name="twitter:description" content={shortenSocialText(description, 200)} />
+        <meta name="twitter:image" content={image.href} />
+        <meta name="twitter:image:alt" content={imageAlt} />
+      </>
+    )}
+  </head>
+  <body><slot /><SiteFooter /></body>
+</html>

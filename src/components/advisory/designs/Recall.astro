@@ -1,0 +1,46 @@
+---
+import ShareActions from '../../ShareActions.astro';
+import AdvisoryHeader from '../AdvisoryHeader.astro';
+import { designs } from '../../../advisories/designs.ts';
+import Evidence from '../Evidence.astro';
+import ScoreDetails from '../ScoreDetails.astro';
+import { advisorySummary } from '../../../advisories/generate.ts';
+import { messages } from '../../../i18n/messages.ts';
+import type { AdvisoryLayoutProps as Props } from '../layout-props.ts';
+
+const { advisory, locale, canonical, alternate, home, shareTitle } = Astro.props;
+const strings = messages[locale];
+const { evidence, severity } = advisory;
+---
+
+<AdvisoryHeader {locale} {alternate} {home} />
+<main class="recall-paper">
+  <header class="recall-front">
+    <div class="recall-band"><span>{designs[advisory.design].publication[locale]}</span><span>{strings.parody}</span></div>
+    <div class="recall-intro">
+      <p class="recall-reference">{strings.cve} <code>{advisory.cve}</code></p>
+      <h1 class="advisory-title">{advisory.title}</h1>
+      <p class="advisory-summary">{advisorySummary(advisory, locale)}</p>
+    </div>
+  </header>
+  <div class="recall-body">
+    <section class="d-alert recall-action" aria-labelledby="recall-action">
+      <h2 id="recall-action">{strings.recallAction}</h2>
+      <p>{advisory.workaround[locale]}</p>
+    </section>
+    <dl class="recall-facts">
+      <div><dt>{strings.affected}</dt><dd>{advisory.affected[locale]}</dd></div>
+      <div><dt>{strings.fixed}</dt><dd><code>{evidence.fixedVersion}</code></dd></div>
+      <div><dt>{strings.severity}</dt><dd>{strings.ratings[severity.rating]} · {strings.score} {severity.score.toFixed(1)}</dd></div>
+    </dl>
+    <Evidence {advisory} {evidence} {locale} />
+    <details class="recall-findings">
+      <summary>{strings.cause}</summary>
+      <p>{advisory.cause[locale]}</p>
+    </details>
+    <ScoreDetails {severity} {locale} />
+  </div>
+  <footer class="recall-footer">
+    <ShareActions iconSet={advisory.iconSet} {locale} url={canonical} title={shareTitle} design="recall" />
+  </footer>
+</main>

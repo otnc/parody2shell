@@ -1,0 +1,71 @@
+@import "tailwindcss";
+@import "./home.css";
+@import "./advisory.css";
+@import "./designs/recall.css";
+@import "./designs/research.css";
+@import "./designs/incident.css";
+@import "./designs/maintainer.css";
+@import "./designs/expanded.css";
+@import "./designs/third-edition.css";
+@import "./designs/fourth-edition.css";
+@import "./designs/case-files.css";
+@import "./advisory-type.css";
+
+@plugin "daisyui" {
+  themes: retro, corporate, night, lofi;
+  prefix: "d-";
+  include: alert, badge, button, card, collapse, menu, progress, stat, steps, table;
+}
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+}
+
+html { min-width: 0; min-height: 100%; }
+body { margin: 0; }
+a { text-underline-offset: 0.22em; }
+button { cursor: pointer; }
+button:disabled { cursor: default; }
+:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+
+html .site-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem 1rem;
+  width: min(100% - 2rem, 68rem);
+  max-width: none;
+  margin: 1.5rem auto 0;
+  padding: 1rem 0 1.5rem;
+  background: transparent;
+  color: inherit;
+  border-top: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+  font-size: 0.88rem;
+}
+.site-footer a { color: inherit; font-weight: 650; text-decoration: underline; }
+
+.share-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem; min-width: 0; }
+.share-feedback { font-size: 0.875rem; }
+.share-actions input:not([hidden]) { flex: 1 1 100%; min-width: 0; border: 1px solid currentColor; border-radius: 0.3rem; padding: 0.35rem 0.65rem; }
+
+.not-found { margin: min(15vh, 9rem) auto; padding: 0 1.25rem; width: min(100%, 40rem); text-align: center; }
+.not-found p:first-child { font-family: monospace; font-size: clamp(4.5rem, 18vw, 8rem); line-height: 1; opacity: 0.35; }
+.not-found h1 { margin: 1.25rem 0 0.6rem; font-size: clamp(1.8rem, 6vw, 3rem); font-weight: 700; line-height: 1.15; }
+.not-found a { margin-top: 1.5rem; }

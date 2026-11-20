@@ -1,0 +1,34 @@
+---
+import type { AdvisoryLayoutProps } from '../layout-props.ts';
+import { messages } from '../../../i18n/messages.ts';
+import { advisorySummary } from '../../../advisories/generate.ts';
+import Evidence from '../Evidence.astro';
+import ScoreDetails from '../ScoreDetails.astro';
+import ThemeNav from './ThemeNav.astro';
+import ShareActions from '../../ShareActions.astro';
+
+const { advisory, locale, home, alternate, canonical, shareTitle } = Astro.props as AdvisoryLayoutProps;
+const s = messages[locale];
+---
+
+<main id="exhibit-label" class="theme-shell exhibit-label">
+  <ThemeNav {locale} {home} {alternate} iconSet={advisory.iconSet} design={advisory.design} />
+  <div class="exhibit-gallery">
+    <header class="exhibit-wall">
+      <div class="exhibit-art" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div class="exhibit-heading"><p class="theme-parody">{s.parody}</p><h1 class="advisory-title">{advisory.title}</h1></div>
+    </header>
+    <aside class="exhibit-plaque">
+      <p class="advisory-summary">{advisorySummary(advisory, locale)}</p>
+      <dl><dt>{s.cve}</dt><dd>{advisory.cve}</dd><dt>{s.score}</dt><dd>{advisory.severity.score.toFixed(1)} · {s.ratings[advisory.severity.rating]}</dd></dl>
+      <ScoreDetails severity={advisory.severity} {locale} />
+      <ShareActions {locale} url={canonical} title={shareTitle} design={advisory.design} iconSet={advisory.iconSet} buttonClass="exhibit-action" />
+    </aside>
+  </div>
+  <section class="exhibit-commentary" aria-label={s.cause}>
+    <aside><h2>{s.affected}</h2><p>{advisory.affected[locale]}</p></aside>
+    <aside><h2>{s.cause}</h2><p>{advisory.cause[locale]}</p></aside>
+    <aside><h2>{s.mitigation}</h2><p>{advisory.workaround[locale]}</p></aside>
+  </section>
+  <Evidence {advisory} evidence={advisory.evidence} {locale} />
+</main>

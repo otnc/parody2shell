@@ -1,0 +1,80 @@
+---
+import type { Advisory } from '../../../advisories/generate.ts';
+import { messages, type Locale } from '../../../i18n/messages.ts';
+import { caseView } from './case-view.ts';
+
+interface Props {
+  advisory: Advisory;
+  locale: Locale;
+  /** Which case-file form to draw. Themes can show more than the record's own format. */
+  form: 'versions' | 'trace' | 'timeline' | 'flow';
+  class?: string;
+}
+
+const { advisory, locale, form, class: className } = Astro.props;
+const s = messages[locale];
+const view = caseView(advisory, locale);
+---
+
+{form === 'versions' && (
+  <figure class:list={['case-figure case-versions', className]} data-case-form="versions">
+    <figcaption>{s.versionMatrix}</figcaption>
+    <div class="case-scroll">
+      <table>
+        <caption class="sr-only">{s.versionMatrixCaption}</caption>
+        <thead><tr><th scope="col">{s.release}</th><th scope="col">{s.defaultConfiguration}</th><th scope="col">{s.triggerConfiguration}</th></tr></thead>
+        <tbody>
+          {view.versions.map(row => (
+            <tr data-role={row.role}>
+              <th scope="row"><span>{row.label}</span> <code>{row.version}</code></th>
+              <td><span class="case-cell" style={{ '--case-share': '0%' }}>{row.standard} / {view.trials}</span></td>
+              <td><span class="case-cell" data-hit={row.trigger > 0 ? '' : undefined} style={{ '--case-share': Math.round(row.trigger * 100 / view.trials) + '%' }}>{row.trigger} / {view.trials}</span></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    {view.note && <p class="case-note"><b>{s.method}</b> {view.note}</p>}
+  </figure>
+)}
+
+{form === 'trace' && (
+  <figure class:list={['case-figure case-trace', className]} data-case-form="trace">
+    <figcaption>{s.trace}</figcaption>
+    <ol>
+      {view.trace.map((step, index) => (
+        <li data-state={step.state}>
+          <span class="case-step" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+          <div><strong>{step.title}</strong><p>{step.text}</p></div>
+        </li>
+      ))}
+    </ol>
+  </figure>
+)}
+
+{form === 'timeline' && (
+  <figure class:list={['case-figure case-timeline', className]} data-case-form="timeline">
+    <figcaption>{s.timeline}</figcaption>
+    <ol>
+      {view.timeline.map(entry => (
+        <li data-event={entry.key}>
+          <time datetime={entry.date}>{entry.date}</time>
+          <div><strong>{entry.title}</strong><p>{entry.note}</p></div>
+        </li>
+      ))}
+    </ol>
+  </figure>
+)}
+
+{form === 'flow' && (
+  <figure class:list={['case-figure case-flow', className]} data-case-form="flow">
+    <figcaption>{s.flow}</figcaption>
+    <ol class="case-path" data-path="fault">
+      {view.flow.fault.map(node => <li data-role={node.role}><strong>{node.title}</strong><span>{node.text}</span></li>)}
+    </ol>
+    <p class="case-path-label">{s.flowFixed}</p>
+    <ol class="case-path" data-path="fixed">
+      {view.flow.fixed.map(node => <li data-role={node.role}><strong>{node.title}</strong><span>{node.text}</span></li>)}
+    </ol>
+  </figure>
+)}

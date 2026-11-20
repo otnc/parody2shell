@@ -1,0 +1,32 @@
+[data-design="maintainer"] {
+  --page-accent: #623894;
+  --page-rule: #cfc3e5;
+  --page-muted: #605472;
+  background: #f0eaf8;
+  color: #2a2036;
+  font-family: "Segoe UI", "Yu Gothic UI", sans-serif;
+}
+[data-design="maintainer"] .advisory-header { background: #e3d7f1; }
+[data-design="maintainer"] .publication, .maintainer-note h1, .maintainer-note h2 { font-family: "Geist Mono Variable", "Yu Gothic UI", monospace; }
+.maintainer-note { width: min(100% - 2rem, 62rem); margin: clamp(1rem, 4vw, 3rem) auto; }
+.maintainer-heading { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 0.75rem; padding-bottom: 1rem; border-bottom: 1px solid var(--page-rule); }
+.maintainer-heading p { color: var(--page-muted); font-weight: 650; }
+.maintainer-note .advisory-title { margin-block: 0.7rem; font-size: clamp(2.1rem, 7vw, 3.9rem); color: #513072; }
+.maintainer-release { display: grid; grid-template-columns: minmax(0, 8rem) minmax(0, 1fr); margin-top: 1.55rem; gap: 1.1rem; }
+.release-tag { display: grid; align-content: start; gap: 0.2rem; color: var(--page-muted); font-size: 0.9rem; }
+.release-tag code { justify-self: start; background: #e6daf4; color: #4e316e; border: 1px solid var(--page-rule); border-radius: 0.3rem; padding: 0.25rem 0.5rem; font-size: 1.15rem; font-weight: 650; }
+.release-content { min-width: 0; padding: clamp(1rem, 4vw, 1.85rem); border: 1px solid var(--page-rule); border-radius: 0.6rem; background: #fcfaff; }
+.release-metadata { display: flex; flex-wrap: wrap; align-items: center; gap: 0.55rem 0.85rem; color: var(--page-accent); font-size: 0.875rem; overflow-wrap: anywhere; }
+.release-content h2 { margin: 0.75rem 0 0.35rem; font-size: 1.3rem; font-weight: 700; }
+.release-changes { display: grid; gap: 0.7rem; margin: 1rem 0; padding-left: 1.25rem; list-style: square; }
+.release-changes li::marker { color: var(--page-accent); }
+.release-disclosure { border: 1px solid var(--page-rule); background: #f3edf9; border-radius: 0.4rem; }
+.release-disclosure summary { font-weight: 650; }
+.release-risk { margin-top: 1rem; padding-top: 0.8rem; border-top: 1px dashed var(--page-rule); font-size: 0.9rem; }
+.release-risk details { margin-top: 0.4rem; }
+.maintainer-note .advisory-evidence { margin-top: 0.95rem; }
+.maintainer-note .chart, .maintainer-note .evidence-table-wrap { border-radius: 0.4rem; }
+@media (max-width: 35rem) {
+  .maintainer-release { grid-template-columns: 1fr; }
+  .release-tag { grid-auto-flow: column; justify-content: start; align-items: center; gap: 0.65rem; }
+}

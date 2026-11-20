@@ -1,0 +1,88 @@
+---
+import type { AdvisoryLayoutProps } from '../layout-props.ts';
+import { messages } from '../../../i18n/messages.ts';
+import { advisorySummary } from '../../../advisories/generate.ts';
+import Evidence from '../Evidence.astro';
+import ScoreDetails from '../ScoreDetails.astro';
+import ThemeNav from './ThemeNav.astro';
+import ShareActions from '../../ShareActions.astro';
+import CaseEvidence from '../case/CaseEvidence.astro';
+import { caseView } from '../case/case-view.ts';
+
+const { advisory, locale, home, alternate, canonical, shareTitle } = Astro.props as AdvisoryLayoutProps;
+const s = messages[locale];
+const ja = locale === 'ja';
+const view = caseView(advisory, locale);
+const sent = advisory.evidence.timeline.published;
+const total = 3;
+const header = (page: number) => sent + '  09:4' + page + '  FROM: parody2shell  ' + (ja ? '頁 ' : 'P.') + page + '/' + total;
+const cover = [
+  [ja ? '宛先' : 'To', ja ? '製品のご担当者さま' : 'Product security contact'],
+  [ja ? '差出人' : 'From', 'parody2shell'],
+  [ja ? '件名' : 'Re', advisory.cve],
+  [ja ? '枚数' : 'Pages', String(total)],
+];
+---
+
+<main id="fax-spool" class="theme-shell fax-spool">
+  <ThemeNav {locale} {home} {alternate} iconSet={advisory.iconSet} design={advisory.design} />
+  <nav class="fax-pager" aria-label={ja ? 'ページ送り' : 'Pages'} data-fax-pager hidden>
+    <button type="button" data-fax-step="-1">{ja ? '前の頁' : 'Previous page'}</button>
+    <output data-fax-status aria-live="polite">1 / {total}</output>
+    <button type="button" data-fax-step="1">{ja ? '次の頁' : 'Next page'}</button>
+  </nav>
+  <div class="fax-roll" data-fax-roll>
+    <article class="fax-page" data-fax-page aria-labelledby="fax-cover-title">
+      <p class="fax-header">{header(1)}</p>
+      <p class="fax-stamp" aria-hidden="true">{ja ? '至急' : 'URGENT'}</p>
+      <p class="theme-parody">{s.parody}</p>
+      <h1 id="fax-cover-title" class="advisory-title">{advisory.subject}<wbr />2shell</h1>
+      <dl class="fax-cover">{cover.map(([key, value]) => <div><dt>{key}</dt><dd>{value}</dd></div>)}</dl>
+      <p class="advisory-summary">{advisorySummary(advisory, locale)}</p>
+      <p class="fax-boxes" aria-label={s.severity}>
+        {(['low', 'medium', 'high', 'critical'] as const).map(rating => <span data-checked={rating === advisory.severity.rating ? '' : undefined}>{s.ratings[rating]}</span>)}
+      </p>
+      <ShareActions {locale} url={canonical} title={shareTitle} design={advisory.design} iconSet={advisory.iconSet} buttonClass="fax-action" />
+    </article>
+    <article class="fax-page" data-fax-page aria-label={(ja ? '報告 ' : 'Report ') + '2/' + total}>
+      <p class="fax-header">{header(2)}</p>
+      <h2>{s.cause}</h2><p>{advisory.cause[locale]}</p>
+      {view.sections.map(section => <><h2>{section.title}</h2><p>{section.text}</p></>)}
+      <h2>{s.affected}</h2><p>{advisory.affected[locale]}</p>
+      <h2>{s.mitigation}</h2><p>{advisory.workaround[locale]}</p>
+    </article>
+    <article class="fax-page" data-fax-page aria-label={(ja ? '試験記録 ' : 'Lab notes ') + '3/' + total}>
+      <p class="fax-header">{header(3)}</p>
+      <CaseEvidence {advisory} {locale} form="trace" />
+      {advisory.evidence.format !== 'trace' && <Evidence {advisory} evidence={advisory.evidence} {locale} />}
+      <ScoreDetails severity={advisory.severity} {locale} />
+      <p class="fax-end">*** {ja ? '送信終了' : 'END OF TRANSMISSION'} ***</p>
+    </article>
+  </div>
+</main>
+
+<script is:inline>
+  const pager = document.querySelector('[data-fax-pager]');
+  const pages = [...document.querySelectorAll('[data-fax-page]')];
+  const status = document.querySelector('[data-fax-status]');
+  if (pager && status && pages.length > 1) {
+    let current = 0;
+    const show = (index) => {
+      current = Math.max(0, Math.min(pages.length - 1, index));
+      pages.forEach((page, position) => { page.hidden = position !== current; });
+      status.value = current + 1 + ' / ' + pages.length;
+      pager.querySelector('[data-fax-step="-1"]').disabled = current === 0;
+      pager.querySelector('[data-fax-step="1"]').disabled = current === pages.length - 1;
+    };
+    pager.hidden = false;
+    pager.addEventListener('click', (event) => {
+      const step = event.target.closest('[data-fax-step]');
+      if (step) show(current + Number(step.dataset.faxStep));
+    });
+    pager.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowRight') show(current + 1);
+      if (event.key === 'ArrowLeft') show(current - 1);
+    });
+    show(0);
+  }
+</script>

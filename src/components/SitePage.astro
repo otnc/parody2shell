@@ -1,0 +1,36 @@
+---
+import { advisorySummary, generateAdvisory } from '../advisories/generate.ts';
+import { homeHeadline } from '../advisories/examples.ts';
+import { messages, type Locale } from '../i18n/messages.ts';
+import Document from '../layouts/Document.astro';
+import { matchSiteHost, siteUrl } from '../routing/hostname.ts';
+import HomePage from './HomePage.astro';
+import { layouts } from './advisory/layouts.ts';
+
+interface Props {
+  locale: Locale;
+  host: Extract<ReturnType<typeof matchSiteHost>, { kind: 'home' | 'advisory' }>;
+}
+
+const { locale, host } = Astro.props;
+const strings = messages[locale];
+const pathname = locale === 'ja' ? '/ja' : '/';
+const alternatePath = locale === 'ja' ? '/' : '/ja';
+const label = host.kind === 'advisory' ? host.label : undefined;
+const canonical = siteUrl(Astro.url, host.base, pathname, label);
+const alternate = siteUrl(Astro.url, host.base, alternatePath, label);
+const image = siteUrl(Astro.url, host.base, locale === 'ja' ? '/ja/og.png' : '/og.png', label);
+image.searchParams.set('v', '4');
+const advisory = host.kind === 'advisory' ? await generateAdvisory(host.label) : null;
+const design = advisory?.design ?? 'home';
+const Layout = advisory && layouts[advisory.design];
+const title = advisory ? advisory.title + ' | parody2shell' : strings.homeTitle;
+const description = advisory ? advisorySummary(advisory, locale) : strings.homeDescription;
+const imageAlt = advisory ? advisory.title + ' · ' + advisory.cve : homeHeadline;
+---
+
+<Document {locale} {title} {description} {design} {canonical} {alternate} {image} {imageAlt} displayFont={advisory?.displayFont} bodyFont={advisory?.bodyFont}>
+  {advisory && Layout
+    ? <Layout {locale} {advisory} {canonical} {alternate} shareTitle={title} home={siteUrl(Astro.url, host.base, pathname)} />
+    : <HomePage {locale} {canonical} {alternate} base={host.base} />}
+</Document>

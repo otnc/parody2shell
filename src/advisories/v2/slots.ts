@@ -1,0 +1,58 @@
+import { affectedInstallations as legacyAffected, workarounds as legacyWorkarounds } from '../v1/slots.ts';
+
+export const affectedInstallations = [
+  ...legacyAffected,
+  { en: 'Only units checked out under a temporary asset tag are in scope.', ja: '仮の資産タグで貸し出された個体だけが対象です。' },
+  { en: 'The issue appears on installations whose first-run checklist still has an empty box.', ja: '初回チェックリストに空欄が残っている環境で発生します。' },
+  { en: 'Units labeled “spare” and brought into regular service are affected.', ja: '「予備」と書かれたまま常用に回された個体が影響を受けます。' },
+  { en: 'The fault affects the original release when the reference profile has been renamed.', ja: '標準プロファイルを改名した初期リリースで発生します。' },
+  { en: 'Only installations marked for review in the inventory are in scope.', ja: '台帳で要確認の印が付いた環境だけが対象です。' },
+  { en: 'The issue was observed on units provisioned from the first setup image.', ja: '初回のセットアップイメージから用意された個体で確認されました。' },
+  { en: 'Units that have been returned to service after long-term storage may be affected.', ja: '長期保管から戻ってきた個体に影響が出ることがあります。' },
+  { en: 'Configurations imported from an archived setup are affected.', ja: '保管済みの設定を取り込んだ環境が影響を受けます。' },
+  { en: 'The incident affects every unit still attached to its original inventory record.', ja: '最初の在庫記録にひも付いたままの個体が影響を受けます。' },
+  { en: 'The fault was recorded on individually configured units during the same test series.', ja: '同じ一連の試験で、個別に設定した個体でも発生が記録されました。' },
+  { en: 'Installations left in the staging profile after handoff are affected.', ja: '引き渡し後も準備用プロファイルのままの環境が影響を受けます。' },
+  { en: 'Only units with an incomplete handoff entry are in scope.', ja: '引き渡し記録の記入が途中の個体だけが対象です。' },
+  { en: 'This notice covers the evaluation unit and the backup used by the lab.', ja: '評価用の個体と、研究室で使った予備機が対象です。' },
+  { en: 'The affected configuration was seen on refurbished units with their setup record intact.', ja: '初期設定の記録が残った整備済みの個体で、影響のある設定が確認されました。' },
+  { en: 'Installations with an unused secondary profile were affected during testing.', ja: '試験では、使われていない予備プロファイルがある環境に影響が出ました。' },
+  { en: 'The issue affects units whose setup sheet is stamped “provisional”.', ja: '設定用紙に「暫定」の印が押された個体が影響を受けます。' },
+] as const;
+
+export const workarounds = [
+  ...legacyWorkarounds,
+  { en: 'Return the configuration to its reference state, then file the setup sheet under “unremarkable”.', ja: '設定を標準状態へ戻し、設定用紙を「特記事項なし」に分類してください。' },
+  { en: 'Close the affected view and continue in the ordinary view until the update arrives.', ja: '該当する画面を閉じ、更新が届くまで通常の画面を使ってください。' },
+  { en: 'Keep the reference and affected profiles clearly labeled while the lab finishes its paperwork.', ja: '研究室の書類仕事が終わるまで、標準と影響ありのプロファイルに別々のラベルを付けてください。' },
+  { en: 'Put the ordinary preset back at the top of the list. Give it a moment to get used to the attention.', ja: '通常のプリセットを一覧の先頭に戻してください。注目されるのに慣れるまで少し待ってください。' },
+  { en: 'File today’s odd result with the lab notes and resume in the reference configuration.', ja: '今日の妙な結果を試験記録にしまい、標準設定で作業を再開してください。' },
+  { en: 'Use the corrected release once its change log has finished announcing itself.', ja: '変更履歴が自己紹介を終えたら、修正版をお使いください。' },
+  { en: 'If a shell appears, close the unexpected view and return to the original screen.', ja: 'シェルが現れたら、突然開いた画面を閉じて元の画面に戻ってください。' },
+  { en: 'Set the affected preset aside. The standard preset is accepting appointments as usual.', ja: '該当のプリセットは脇に置いてください。標準プリセットは通常どおり受け付けています。' },
+  { en: 'Mark the affected setup as pending, then continue with the lab’s reference setup.', ja: '該当の設定を保留にして、研究室の標準設定で作業を続けてください。' },
+  { en: 'The service desk recommends the documented settings and an uncluttered desk.', ja: '窓口は、手順書どおりの設定と片付いた机を推奨しています。' },
+  { en: 'Start a fresh session in the reference profile and archive the earlier session as a curiosity.', ja: '標準プロファイルで新しく始めて、さっきのセッションは珍しい記録として保管してください。' },
+  { en: 'Keep the ordinary release on active duty and assign the affected one to paperwork.', ja: '通常版を引き続き使い、影響のある版には書類仕事を任せてください。' },
+  { en: 'For today, avoid the affected setting and give the replacement release its own label.', ja: '今日は該当の設定を避け、交換用のリリースに専用のラベルを用意してください。' },
+  { en: 'Return to the documented defaults until the release manager signs off.', ja: 'リリース担当が承認するまでは、手順書にある初期値に戻してください。' },
+  { en: 'Record the unexpected prompt as an observation and reopen the standard view.', ja: '突然現れたプロンプトを観察記録に書き、標準の画面を開き直してください。' },
+  { en: 'Use the replacement profile. Leave the previous one in the archive for future review.', ja: '交換用のプロファイルを使ってください。以前のものは次の確認に備えて保管しておきます。' },
+  { en: 'The reference configuration is available now. The shell can wait its turn.', ja: '標準設定はすぐに利用できます。シェルには順番を待ってもらいましょう。' },
+  { en: 'Use the ordinary workflow while the investigation stays open.', ja: '調査が続く間は、通常の手順で作業してください。' },
+] as const;
+
+export const summaryForms = [
+  { en: '{subject} can unexpectedly open a shell when {trigger}.', ja: '{subject}では、{trigger}、意図せずシェルが起動することがあります。' },
+  { en: 'An unsolicited shell can appear in {subject} when {trigger}.', ja: '{subject}で、{trigger}に意図しないシェルの起動が確認されました。' },
+  { en: 'During testing, {subject} opened a shell when {trigger}.', ja: '試験中の{subject}で、{trigger}にシェルが開きました。' },
+  { en: 'Normal use of {subject} can end with a shell when {trigger}.', ja: '{subject}を通常どおり使っていても、{trigger}にシェルが開く場合があります。' },
+  { en: 'The issue in {subject} presents itself as a shell when {trigger}.', ja: '{subject}のこの問題は、{trigger}にシェルが開くという形で現れます。' },
+  { en: 'The lab observed an unexpected shell from {subject} when {trigger}.', ja: '研究室では、{subject}で{trigger}に予期しないシェルが開くことを確認しています。' },
+  { en: 'A shell can interrupt the normal behavior of {subject} when {trigger}.', ja: '{subject}では、{trigger}にシェルが通常の動作に割り込む場合があります。' },
+  { en: 'A test of {subject} produced an unrequested shell when {trigger}.', ja: '{subject}の試験では、{trigger}に要求していないシェルが現れました。' },
+  { en: 'The affected release of {subject} may start a shell when {trigger}.', ja: '影響のある版の{subject}では、{trigger}にシェルが起動することがあります。' },
+  { en: 'The advisory for {subject} covers a shell that appears when {trigger}.', ja: '{subject}のこの告知では、{trigger}にシェルが開く現象を扱います。' },
+  { en: 'The first sign of the issue in {subject} is a shell appearing when {trigger}.', ja: '{subject}でこの問題を見分ける手がかりは、{trigger}に現れるシェルです。' },
+  { en: 'Observers reported one surprising result from {subject}: a shell can open when {trigger}.', ja: '{subject}の観察中、{trigger}にシェルが開くという意外な結果が報告されました。' },
+] as const;

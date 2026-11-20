@@ -1,0 +1,32 @@
+---
+import { advisorySummary } from '../../../advisories/generate.ts';
+import { messages } from '../../../i18n/messages.ts';
+import ShareActions from '../../ShareActions.astro';
+import Evidence from '../Evidence.astro';
+import ScoreDetails from '../ScoreDetails.astro';
+import type { AdvisoryLayoutProps as Props } from '../layout-props.ts';
+import ThemeNav from './ThemeNav.astro';
+
+const { advisory, locale, home, alternate, canonical, shareTitle } = Astro.props;
+const s = messages[locale];
+---
+<main class="theme-shell utility-desktop" id="utility-window">
+  <ThemeNav iconSet={advisory.iconSet} {locale} {home} {alternate} design={advisory.design} />
+  <article class="window">
+    <header class="title-bar"><div class="title-bar-text">{s.parody}</div></header>
+    <div class="window-body">
+      <h1 class="advisory-title">{advisory.title}</h1>
+      <p class="advisory-summary">{advisorySummary(advisory, locale)}</p>
+      <fieldset><legend>{s.affected}</legend><p>{advisory.affected[locale]}</p><p>{s.fixed} <code>{advisory.evidence.fixedVersion}</code></p></fieldset>
+      <fieldset><legend>{s.mitigation}</legend><p>{advisory.workaround[locale]}</p></fieldset>
+      <details><summary>{s.cause}</summary><p>{advisory.cause[locale]}</p></details>
+      <Evidence {advisory} evidence={advisory.evidence} {locale} />
+      <ScoreDetails severity={advisory.severity} {locale} />
+      <ShareActions iconSet={advisory.iconSet} {locale} url={canonical} title={shareTitle} design={advisory.design} buttonClass="utility-button" />
+    </div>
+    <footer class="status-bar">
+      <p class="status-bar-field">{s.cve} <code>{advisory.cve}</code></p>
+      <p class="status-bar-field">{s.score} {advisory.severity.score.toFixed(1)} · {s.ratings[advisory.severity.rating]}</p>
+    </footer>
+  </article>
+</main>

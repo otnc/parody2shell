@@ -1,0 +1,74 @@
+---
+import type { AdvisoryLayoutProps } from '../layout-props.ts';
+import { messages } from '../../../i18n/messages.ts';
+import { advisorySummary } from '../../../advisories/generate.ts';
+import Evidence from '../Evidence.astro';
+import ScoreDetails from '../ScoreDetails.astro';
+import ThemeNav from './ThemeNav.astro';
+import ShareActions from '../../ShareActions.astro';
+import CaseEvidence from '../case/CaseEvidence.astro';
+import { caseView } from '../case/case-view.ts';
+
+const { advisory, locale, home, alternate, canonical, shareTitle } = Astro.props as AdvisoryLayoutProps;
+const s = messages[locale];
+const ja = locale === 'ja';
+const view = caseView(advisory, locale);
+const speakers = ja ? ['キャスター', '現地', '技術解説', 'キャスター'] : ['ANCHOR', 'FIELD', 'ENGINEER', 'ANCHOR'];
+const transcript = [
+  { speaker: speakers[0], text: advisorySummary(advisory, locale) },
+  ...view.sections.map((section, index) => ({ speaker: speakers[1 + (index % 2)], text: section.title + ': ' + section.text })),
+  { speaker: speakers[3], text: s.mitigation + ': ' + advisory.workaround[locale] },
+];
+const live = ja ? '速報' : 'Bulletin';
+const ticker = [s.affected + ': ' + advisory.affected[locale], s.cve + ' ' + advisory.cve, s.score + ' ' + advisory.severity.score.toFixed(1)].join('  ///  ');
+---
+
+<main id="broadcast-interruption" class="theme-shell broadcast-interruption">
+  <ThemeNav {locale} {home} {alternate} iconSet={advisory.iconSet} design={advisory.design} />
+  <div class="broadcast-bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <header class="card broadcast-screen">
+    <div class="card-body">
+      <p class="broadcast-flags"><span class="badge text-bg-danger">{live}</span> <span class="theme-parody">{s.parody}</span></p>
+      <h1 class="advisory-title">{advisory.subject}<wbr />2shell</h1>
+      <p class="broadcast-lower-third"><code>{advisory.cve}</code> <span>{advisory.severity.score.toFixed(1)} · {s.ratings[advisory.severity.rating]}</span></p>
+    </div>
+  </header>
+  <section class="broadcast-transcript" aria-labelledby="broadcast-transcript-title">
+    <div class="broadcast-transcript-head">
+      <h2 id="broadcast-transcript-title">{ja ? '放送の書き起こし' : 'Transcript'}</h2>
+      <button type="button" class="btn btn-sm btn-outline-light" data-transcript-replay hidden>{ja ? 'もう一度流す' : 'Replay'}</button>
+    </div>
+    <ol class="list-group" data-transcript>
+      {transcript.map((line, index) => (
+        <li class="list-group-item" style={{ '--line': index }}>
+          <span class="broadcast-time">00:0{index}:{String(index * 17 % 60).padStart(2, '0')}</span>
+          <b>{line.speaker}</b>
+          <p>{line.text}</p>
+        </li>
+      ))}
+    </ol>
+  </section>
+  <div class="broadcast-desk">
+    <CaseEvidence {advisory} {locale} form="timeline" />
+    {advisory.evidence.format !== 'timeline' && <Evidence {advisory} evidence={advisory.evidence} {locale} />}
+  </div>
+  <footer class="broadcast-footer">
+    <ScoreDetails severity={advisory.severity} {locale} />
+    <ShareActions {locale} url={canonical} title={shareTitle} design={advisory.design} iconSet={advisory.iconSet} buttonClass="btn btn-sm btn-outline-info" />
+  </footer>
+  <p class="broadcast-ticker" aria-hidden="true"><span>{ticker}</span><span>{ticker}</span></p>
+</main>
+
+<script is:inline>
+  const lines = document.querySelector('[data-transcript]');
+  const replay = document.querySelector('[data-transcript-replay]');
+  if (lines && replay && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    lines.classList.add('is-rolling');
+    replay.hidden = false;
+    replay.addEventListener('click', () => {
+      lines.classList.remove('is-rolling');
+      void lines.offsetWidth;
+      lines.classList.add('is-rolling');
+    });
+  }
+</script>

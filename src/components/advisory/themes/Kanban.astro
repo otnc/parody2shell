@@ -1,0 +1,62 @@
+---
+import type { AdvisoryLayoutProps } from '../layout-props.ts';
+import { messages } from '../../../i18n/messages.ts';
+import { advisorySummary } from '../../../advisories/generate.ts';
+import Evidence from '../Evidence.astro';
+import ScoreDetails from '../ScoreDetails.astro';
+import ThemeNav from './ThemeNav.astro';
+import ShareActions from '../../ShareActions.astro';
+import CaseEvidence from '../case/CaseEvidence.astro';
+import { caseView } from '../case/case-view.ts';
+
+const { advisory, locale, home, alternate, canonical, shareTitle } = Astro.props as AdvisoryLayoutProps;
+const s = messages[locale];
+const ja = locale === 'ja';
+const view = caseView(advisory, locale);
+const text = (id: string) => view.sections.find(section => section.id === id);
+const lanes = ja ? ['報告済み', '再現済み', '修正済み', '公開済み'] : ['Reported', 'Reproduced', 'Fixed', 'Published'];
+const { timeline } = advisory.evidence;
+const cards = [
+  [{ title: s.flowNodes.trigger, body: advisory.trigger[locale], date: timeline.observed }, text('expected') && { title: text('expected')!.title, body: text('expected')!.text }],
+  [text('observed') && { title: text('observed')!.title, body: text('observed')!.text, date: timeline.isolated }, { title: s.cause, body: advisory.cause[locale] }, text('conditions') && { title: text('conditions')!.title, body: text('conditions')!.text }],
+  [text('comparison') && { title: text('comparison')!.title, body: text('comparison')!.text, date: timeline.compared }, { title: s.releaseRoles.fixed, body: advisory.evidence.fixedVersion }],
+  [{ title: s.affected, body: advisory.affected[locale], date: timeline.published }, { title: s.mitigation, body: advisory.workaround[locale] }],
+];
+const ticker = advisory.cve + ' · ' + s.score + ' ' + advisory.severity.score.toFixed(1) + ' · ' + s.ratings[advisory.severity.rating] + ' · ';
+---
+
+<main id="triage-board" class="theme-shell triage-board">
+  <ThemeNav {locale} {home} {alternate} iconSet={advisory.iconSet} design={advisory.design} />
+  <header class="nb-card kanban-header">
+    <p class="theme-parody">{s.parody}</p>
+    <h1 class="advisory-title">{advisory.subject}<wbr />2shell</h1>
+    <p class="advisory-summary">{advisorySummary(advisory, locale)}</p>
+  </header>
+  <div class="nb-marquee kanban-marquee" aria-hidden="true"><div class="nb-marquee-content">{ticker.repeat(4)}</div></div>
+  <ol class="kanban-lanes">
+    {lanes.map((lane, index) => (
+      <li class="kanban-lane" data-lane={index}>
+        <h2>{lane} <span class="kanban-count">{cards[index].filter(Boolean).length}</span></h2>
+        <ul>
+          {cards[index].filter(Boolean).map(card => card && (
+            <li class="nb-card kanban-card">
+              <details open={index === 0 || index === 3}>
+                <summary class="nb-card-title">{card.title}</summary>
+                <p class="nb-card-text">{card.body}</p>
+              </details>
+              {card.date && <time datetime={card.date}>{card.date}</time>}
+            </li>
+          ))}
+        </ul>
+      </li>
+    ))}
+  </ol>
+  <div class="kanban-evidence">
+    <CaseEvidence {advisory} {locale} form="flow" />
+    {advisory.evidence.format !== 'flow' && <Evidence {advisory} evidence={advisory.evidence} {locale} />}
+  </div>
+  <footer class="kanban-footer">
+    <ScoreDetails severity={advisory.severity} {locale} />
+    <ShareActions {locale} url={canonical} title={shareTitle} design={advisory.design} iconSet={advisory.iconSet} buttonClass="nb-button default" />
+  </footer>
+</main>

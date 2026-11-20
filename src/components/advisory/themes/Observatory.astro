@@ -1,0 +1,85 @@
+---
+import type { AdvisoryLayoutProps } from '../layout-props.ts';
+import { messages } from '../../../i18n/messages.ts';
+import { advisorySummary } from '../../../advisories/generate.ts';
+import Evidence from '../Evidence.astro';
+import ScoreDetails from '../ScoreDetails.astro';
+import ThemeNav from './ThemeNav.astro';
+import ShareActions from '../../ShareActions.astro';
+import CaseEvidence from '../case/CaseEvidence.astro';
+import { caseView } from '../case/case-view.ts';
+
+const { advisory, locale, home, alternate, canonical, shareTitle } = Astro.props as AdvisoryLayoutProps;
+const s = messages[locale];
+const ja = locale === 'ja';
+const view = caseView(advisory, locale);
+const rate = Math.round(view.hits * 100 / view.trials);
+const rounds = advisory.evidence.rounds;
+const chartData = JSON.stringify({
+  rounds: { labels: rounds.map((_, index) => String(index + 1)), series: [rounds] },
+  versions: { labels: view.versions.map(row => row.version), series: [view.versions.map(row => row.trigger)] },
+  trials: view.trials,
+});
+---
+
+<main id="observatory-bulletin" class="theme-shell observatory-bulletin">
+  <ThemeNav {locale} {home} {alternate} iconSet={advisory.iconSet} design={advisory.design} />
+  <header class="observatory-head">
+    <div>
+      <p class="theme-parody">{s.parody}</p>
+      <h1 class="advisory-title">{advisory.subject}<wbr />2shell</h1>
+      <p class="advisory-summary">{advisorySummary(advisory, locale)}</p>
+    </div>
+    <figure class="observatory-gauge" style={{ '--rate': rate + '%' }}>
+      <div aria-hidden="true"><strong>{rate}%</strong></div>
+      <figcaption>{s.evidenceRing}<br /><code>{view.hits} / {view.trials}</code></figcaption>
+    </figure>
+  </header>
+  <dl class="observatory-readings">
+    <div><dt>{s.cve}</dt><dd>{advisory.cve}</dd></div>
+    <div><dt>{s.score}</dt><dd>{advisory.severity.score.toFixed(1)} · {s.ratings[advisory.severity.rating]}</dd></div>
+    <div><dt>{s.releaseRoles.affected}</dt><dd>{advisory.evidence.affectedVersion}</dd></div>
+    <div><dt>{s.releaseRoles.fixed}</dt><dd>{advisory.evidence.fixedVersion}</dd></div>
+  </dl>
+  <div class="observatory-charts" data-observatory-charts={chartData}>
+    <figure>
+      <figcaption>{s.evidenceTimeline}</figcaption>
+      <div class="observatory-chart" data-chart="rounds"></div>
+      <ol class="observatory-fallback">{rounds.map((count, index) => <li><span>{index + 1}</span> {count}/{view.trials}</li>)}</ol>
+    </figure>
+    <figure>
+      <figcaption>{s.versionMatrix}</figcaption>
+      <div class="observatory-chart" data-chart="versions"></div>
+      <ol class="observatory-fallback">{view.versions.map(row => <li><span>{row.version}</span> {row.trigger}/{view.trials}</li>)}</ol>
+    </figure>
+  </div>
+  <div class="observatory-log">
+    <section class="observatory-remarks">
+      <h2>{s.cause}</h2><p>{advisory.cause[locale]}</p>
+      {view.sections.map(section => <><h2>{section.title}</h2><p>{section.text}</p></>)}
+      <h2>{s.affected}</h2><p>{advisory.affected[locale]}</p>
+      <h2>{s.mitigation}</h2><p>{advisory.workaround[locale]}</p>
+    </section>
+    <CaseEvidence {advisory} {locale} form="timeline" />
+  </div>
+  {!['line', 'timeline', 'ring'].includes(advisory.evidence.format) && <Evidence {advisory} evidence={advisory.evidence} {locale} />}
+  <footer>
+    <ScoreDetails severity={advisory.severity} {locale} />
+    <ShareActions {locale} url={canonical} title={shareTitle} design={advisory.design} iconSet={advisory.iconSet} buttonClass="observatory-action" />
+  </footer>
+</main>
+
+<script is:inline type="module">
+  import { LineChart, BarChart } from '/client/chartist.js';
+
+  const host = document.querySelector('[data-observatory-charts]');
+  if (host) {
+    const data = JSON.parse(host.dataset.observatoryCharts);
+    const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const axis = { low: 0, high: data.trials, onlyInteger: true };
+    new LineChart(host.querySelector('[data-chart="rounds"]'), data.rounds, { ...axis, showArea: true, fullWidth: true, chartPadding: { right: 18 }, axisY: { onlyInteger: true } });
+    new BarChart(host.querySelector('[data-chart="versions"]'), data.versions, { ...axis, axisY: { onlyInteger: true } });
+    host.classList.add('is-charted');
+    if (calm) host.classList.add('is-still');
+  }
+</script>

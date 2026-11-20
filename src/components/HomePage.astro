@@ -1,0 +1,156 @@
+---
+import diceIcon from 'lucide-static/icons/dice-5.svg?raw';
+import { Badge } from './ui/badge';
+import { Button, buttonVariants } from './ui/button';
+import { Card, CardContent } from './ui/card';
+import { Input } from './ui/input';
+import ShareActions from './ShareActions.astro';
+import { messages, type Locale } from '../i18n/messages.ts';
+import { parseSubjectLabel, siteUrl, subjectDisplayName } from '../routing/hostname.ts';
+import { designs } from '../advisories/designs.ts';
+import { designForLabel } from '../advisories/generate.ts';
+import { headlineSubjects, headlineSuffix, homeExamples, homeHeadline } from '../advisories/examples.ts';
+
+interface Props {
+  locale: Locale;
+  base: 'localhost' | '2shell.cc';
+  canonical: URL;
+  alternate: URL;
+}
+
+const { locale, base, canonical, alternate } = Astro.props;
+const strings = messages[locale];
+const invalidSubject = Astro.url.searchParams.get('subject');
+const examples = await Promise.all(homeExamples.map(async (name) => {
+  const label = parseSubjectLabel(name)!;
+  const design = await designForLabel(label);
+  return { design, title: subjectDisplayName(label) + '2shell', item: designs[design], url: siteUrl(Astro.url, base, canonical.pathname, label) };
+}));
+---
+
+<header class="home-header">
+  <a class="home-brand" href={canonical.href} aria-label={strings.home}><span aria-hidden="true">&gt;_</span> parody2shell</a>
+  <a class={buttonVariants({ variant: 'ghost', size: 'sm' })} href={alternate.href} hreflang={locale === 'ja' ? 'en' : 'ja'}>{strings.language}</a>
+</header>
+
+<main class="home-main">
+  <section class="home-hero" aria-labelledby="home-title">
+    <Badge variant="outline" className="home-badge">{strings.parody}</Badge>
+    <h1 id="home-title">
+      <span class="sr-only">{homeHeadline}</span>
+      <span aria-hidden="true" class="home-headline"><span class="headline-signal" data-headline-signal data-subjects={JSON.stringify(headlineSubjects)}>{headlineSubjects[0]}</span><wbr />{headlineSuffix}</span>
+    </h1>
+    <button type="button" class="headline-toggle" data-headline-toggle data-play={strings.playHeadline} data-pause={strings.pauseHeadline} hidden>{strings.pauseHeadline}</button>
+    <p>{strings.homeDescription}</p>
+
+    <form method="get" action={canonical.pathname} class="subject-form">
+      <label for="subject" class="sr-only">{strings.fieldLabel}</label>
+      <div class="subject-control">
+        <Button type="button" variant="ghost" size="icon-lg" className="home-random" data-random-subject aria-controls="subject" aria-label={strings.randomSubject} title={strings.randomSubject} hidden>
+          <span aria-hidden="true" set:html={diceIcon} />
+        </Button>
+        <Input id="subject" name="subject" type="text" defaultValue={invalidSubject ?? ''} placeholder={strings.fieldPlaceholder} required autoComplete="off" autoCapitalize="none" spellCheck={false} aria-invalid={invalidSubject !== null ? 'true' : undefined} aria-describedby={invalidSubject !== null ? 'subject-error' : undefined} className="home-input" />
+        <span aria-hidden="true">.{base}</span>
+      </div>
+      <Button size="lg" type="submit" className="home-submit">{strings.generate}</Button>
+      <span class="sr-only" role="status" data-random-status></span>
+      {invalidSubject !== null && <p class="form-error" id="subject-error" role="alert">{strings.invalidName}</p>}
+    </form>
+
+    <ShareActions locale={locale} url={canonical} title={strings.homeTitle} design="home" />
+  </section>
+
+  <section class="home-examples" aria-labelledby="examples-title">
+    <h2 id="examples-title">{strings.examples}</h2>
+    <div class="example-grid">
+      {examples.map((sample) => (
+        <a href={sample.url.href} class="example-link" data-sample={sample.design} data-preview={sample.item.card} style={{ '--sample-background': sample.item.background, '--sample-ink': sample.item.accent }}>
+          <Card className="example-card">
+            <div class="sample-visual" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+            <CardContent className="example-card-content">
+              <span>{sample.item.publication[locale]}</span>
+              <strong>{sample.title}</strong>
+            </CardContent>
+          </Card>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <section class="home-guide" aria-labelledby="instructions-title">
+    <h2 id="instructions-title">{strings.howTo}</h2>
+    <p>{strings.instructions}</p>
+  </section>
+</main>
+
+<script is:inline type="module">
+  const target = document.querySelector('[data-headline-signal]');
+  const subjects = JSON.parse(target?.dataset.subjects ?? '[]');
+  const randomButton = document.querySelector('[data-random-subject]');
+  const randomStatus = document.querySelector('[data-random-status]');
+  const subjectInput = document.getElementById('subject');
+
+  if (randomButton && subjectInput && randomStatus && subjects.length > 1) {
+    randomButton.hidden = false;
+    randomButton.addEventListener('click', () => {
+      const candidates = subjects.filter(subject => subject !== subjectInput.value);
+      subjectInput.value = candidates[Math.floor(Math.random() * candidates.length)];
+      subjectInput.removeAttribute('aria-invalid');
+      subjectInput.removeAttribute('aria-describedby');
+      document.getElementById('subject-error')?.remove();
+      randomStatus.textContent = subjectInput.value;
+    });
+  }
+
+  const toggle = document.querySelector('[data-headline-toggle]');
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+
+  if (target && toggle && subjects.length > 0) {
+    let position = 0;
+    let timer = 0;
+    let advancing = true;
+    const noise = '01#%*+.:';
+
+    const stop = () => {
+      clearTimeout(timer);
+      target.textContent = subjects[position];
+      delete target.dataset.scrambling;
+    };
+
+    const advance = () => {
+      position = (position + 1) % subjects.length;
+      const subject = Array.from(subjects[position]);
+      target.dataset.scrambling = '';
+      let frame = 0;
+      const draw = () => {
+        if (frame === 7) {
+          stop();
+          timer = window.setTimeout(advance, 1850);
+          return;
+        }
+        target.textContent = subject.map((letter, index) =>
+          letter === ' ' || index < frame * subject.length / 7
+            ? letter
+            : noise[Math.floor(Math.random() * noise.length)],
+        ).join('');
+        frame++;
+        timer = window.setTimeout(draw, 45);
+      };
+      draw();
+    };
+
+    const sync = () => {
+      stop();
+      toggle.hidden = reducedMotion.matches;
+      toggle.textContent = (advancing ? toggle.dataset.pause : toggle.dataset.play) ?? '';
+      if (advancing && !reducedMotion.matches && !document.hidden) {
+        timer = window.setTimeout(advance, 1850);
+      }
+    };
+
+    toggle.addEventListener('click', () => { advancing = !advancing; sync(); });
+    reducedMotion.addEventListener('change', sync);
+    document.addEventListener('visibilitychange', sync);
+    sync();
+  }
+</script>

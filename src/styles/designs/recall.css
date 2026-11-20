@@ -1,0 +1,31 @@
+[data-design="recall"] {
+  --page-accent: #8b2c21;
+  --page-rule: #bfa98c;
+  --page-muted: #6c5041;
+  background: #e9dcc5;
+  color: #2a211b;
+  font-family: Georgia, "Yu Mincho", "Hiragino Mincho ProN", serif;
+}
+[data-design="recall"] .advisory-header { background: #f7eddb; }
+.recall-paper { --notice-padding: clamp(1rem, 5vw, 3rem); width: min(100% - 2rem, 62rem); margin: clamp(1rem, 4vw, 3.25rem) auto; background: #fffaee; border: 1px solid #ad967b; box-shadow: 0 0.55rem 0 #2a211b14; }
+.recall-band { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.45rem 1rem; background: #8b2c21; color: #fff8eb; padding: 0.85rem var(--notice-padding); font: 700 0.9rem system-ui, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; }
+.recall-band > :last-child { font-weight: 500; }
+.recall-intro { padding: 2rem var(--notice-padding) 0; }
+.recall-reference { color: var(--page-muted); font-size: 0.875rem; overflow-wrap: anywhere; }
+.recall-front .advisory-title { margin: 0.9rem 0; }
+.recall-front .advisory-summary { font-size: 1.2rem; }
+.recall-body { display: grid; gap: 1.5rem; padding: 1.65rem var(--notice-padding) 2.25rem; }
+.recall-action { display: block; border: 0; border-left: 0.3rem solid var(--page-accent); border-radius: 0; background: #f5e0d2; color: #40251e; padding: 1rem 1.3rem; }
+.recall-action h2 { font-weight: 700; font-size: 1.35rem; }
+.recall-action p { margin-top: 0.3rem; }
+.recall-facts { border-top: 1px solid var(--page-rule); }
+.recall-facts > div { display: grid; grid-template-columns: minmax(0, 10rem) minmax(0, 1fr); gap: 0.35rem 1rem; padding: 0.7rem 0; border-bottom: 1px solid var(--page-rule); }
+.recall-facts dt { font-weight: 700; color: var(--page-muted); }
+.recall-paper .evidence-table { border-collapse: collapse; }
+.recall-paper .evidence-table tr { border-bottom: 1px solid var(--page-rule); }
+.recall-findings summary { cursor: pointer; font-weight: 700; }
+.recall-findings p { margin-top: 0.5rem; max-width: 68ch; }
+.recall-footer { border-top: 1px solid var(--page-rule); padding: 1rem var(--notice-padding); }
+@media (max-width: 32rem) {
+  .recall-facts > div { grid-template-columns: 1fr; }
+}

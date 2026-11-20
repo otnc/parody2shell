@@ -1,0 +1,46 @@
+@import "@fontsource-variable/bitter";
+@import "@fontsource-variable/newsreader";
+@import "@fontsource-variable/source-serif-4";
+@import "@fontsource-variable/space-grotesk";
+@import "@fontsource-variable/plus-jakarta-sans";
+@import "@fontsource-variable/manrope";
+@import "@fontsource-variable/work-sans";
+@import "@fontsource-variable/jetbrains-mono";
+@import "@fontsource/shippori-mincho/japanese-700.css";
+@import "@fontsource/zen-kaku-gothic-new/japanese-400.css";
+@import "@fontsource-variable/m-plus-1-code";
+@import "@fontsource-variable/unbounded";
+@import "@fontsource-variable/bricolage-grotesque";
+@import "@fontsource-variable/azeret-mono";
+@import "@fontsource-variable/fraunces";
+@import "@fontsource-variable/syne";
+@import "@fontsource/bungee/latin-400.css";
+@import "@fontsource/rocknroll-one/japanese-400.css";
+@import "@fontsource/dotgothic16/japanese-400.css";
+@import "@fontsource-variable/big-shoulders-display";
+@import "@fontsource/dela-gothic-one/japanese-400.css";
+@import "@fontsource/dela-gothic-one/latin-400.css";
+@import "@fontsource/major-mono-display/latin-400.css";
+@import "@fontsource/xanh-mono/latin-400.css";
+@import "@fontsource/special-elite/latin-400.css";
+@import "@fontsource/courier-prime/latin-400.css";
+@import "@fontsource/courier-prime/latin-700.css";
+@import "@fontsource/cinzel-decorative/latin-700.css";
+@import "@fontsource/im-fell-english/latin-400.css";
+@import "@fontsource/yuji-syuku/japanese-400.css";
+@import "@fontsource/kaisei-decol/japanese-400.css";
+@import "@fontsource/kaisei-decol/latin-400.css";
+@import "@fontsource/vt323/latin-400.css";
+@import "@fontsource/silkscreen/latin-400.css";
+@import "@fontsource/klee-one/japanese-400.css";
+@import "@fontsource/klee-one/latin-400.css";
+@import "@fontsource/hachi-maru-pop/japanese-400.css";
+@import "@fontsource/hachi-maru-pop/latin-400.css";
+@import "@fontsource/oswald/latin-400.css";
+@import "@fontsource/oswald/latin-700.css";
+
+html[data-body-font] body, html[data-body-font] .theme-shell { font-family: var(--advisory-body); }
+html[data-display-font] .advisory-title { font-family: var(--advisory-display); }
+.advisory-icon { display: inline-flex; width: 1em; height: 1em; vertical-align: -0.12em; flex: none; margin-inline-end: 0.4em; }
+.advisory-icon svg { display: block; width: 100%; height: 100%; }
+.advisory-icon[data-icon-set="material"], .advisory-icon[data-icon-set="hackernoon"] { fill: currentColor; }

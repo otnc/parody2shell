@@ -1,0 +1,18 @@
+---
+import type { Advisory } from '../../advisories/generate.ts';
+import { messages, type Locale } from '../../i18n/messages.ts';
+
+interface Props {
+  severity: Advisory['severity'];
+  locale: Locale;
+}
+
+const { severity, locale } = Astro.props;
+const strings = messages[locale];
+---
+
+<details class="score-details">
+  <summary>{strings.scoreVector}</summary>
+  <code>{severity.vector}</code>
+  <p>{strings.cvssCredit}</p>
+</details>

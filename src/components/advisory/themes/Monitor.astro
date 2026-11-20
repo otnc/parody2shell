@@ -1,0 +1,34 @@
+---
+import { advisorySummary } from '../../../advisories/generate.ts';
+import { messages } from '../../../i18n/messages.ts';
+import ShareActions from '../../ShareActions.astro';
+import Evidence from '../Evidence.astro';
+import ScoreDetails from '../ScoreDetails.astro';
+import type { AdvisoryLayoutProps as Props } from '../layout-props.ts';
+import ThemeNav from './ThemeNav.astro';
+
+const { advisory, locale, home, alternate, canonical, shareTitle } = Astro.props;
+const s = messages[locale];
+const { evidence, severity } = advisory;
+---
+<main class="theme-shell service-monitor" id="service-monitor">
+  <ThemeNav iconSet={advisory.iconSet} {locale} {home} {alternate} design={advisory.design} />
+  <header class="page-header"><div><p class="theme-parody">{s.parody}</p><h1 class="advisory-title">{advisory.title}</h1></div><ShareActions iconSet={advisory.iconSet} {locale} url={canonical} title={shareTitle} design={advisory.design} buttonClass="btn btn-sm btn-outline-primary" /></header>
+  <div class="monitor-metrics">
+    <section class="card"><div class="card-body"><h2>{s.score}</h2><div>{severity.score.toFixed(1)} · {s.ratings[severity.rating]}</div></div></section>
+    <section class="card"><div class="card-body"><h2>{s.fixed}</h2><div><code>{evidence.fixedVersion}</code></div></div></section>
+    <section class="card"><div class="card-body"><h2>{s.cve}</h2><div class="monitor-cve"><code>{advisory.cve}</code></div></div></section>
+  </div>
+  <div class="monitor-board">
+    <section class="card"><div class="card-body">
+      <h2>{s.summary}</h2><p class="advisory-summary">{advisorySummary(advisory, locale)}</p>
+      <h3>{s.cause}</h3><p>{advisory.cause[locale]}</p>
+      <ScoreDetails {severity} {locale} />
+    </div></section>
+    <aside class="card"><div class="card-body">
+      <h2>{s.affected}</h2><p>{advisory.affected[locale]}</p>
+      <h2>{s.mitigation}</h2><p>{advisory.workaround[locale]}</p>
+    </div></aside>
+  </div>
+  <Evidence {advisory} {evidence} {locale} />
+</main>

@@ -1,0 +1,32 @@
+---
+import type { AdvisoryLayoutProps } from '../layout-props.ts';
+import { messages } from '../../../i18n/messages.ts';
+import { advisorySummary } from '../../../advisories/generate.ts';
+import Evidence from '../Evidence.astro';
+import ScoreDetails from '../ScoreDetails.astro';
+import ThemeNav from './ThemeNav.astro';
+import ShareActions from '../../ShareActions.astro';
+
+const { advisory, locale, home, alternate, canonical, shareTitle } = Astro.props as AdvisoryLayoutProps;
+const s = messages[locale];
+---
+
+<main id="incident-exchange" class="theme-shell incident-exchange">
+  <ThemeNav {locale} {home} {alternate} iconSet={advisory.iconSet} design={advisory.design} />
+  <header class="exchange-ticker">
+    <div><span class="label success">{s.parody}</span><h1 class="advisory-title">{advisory.title}</h1></div>
+    <dl><div><dt>{s.score}</dt><dd>{advisory.severity.score.toFixed(1)}</dd></div><div><dt>{s.versions}</dt><dd>{advisory.evidence.affectedVersion}</dd></div><div><dt>{s.fixed}</dt><dd>{advisory.evidence.fixedVersion}</dd></div></dl>
+  </header>
+  <div class="exchange-grid">
+    <section class="exchange-observations">
+      <p class="advisory-summary">{advisorySummary(advisory, locale)}</p>
+      <Evidence {advisory} evidence={advisory.evidence} {locale} />
+      <h2>{s.cause}</h2><p>{advisory.cause[locale]}</p>
+    </section>
+    <aside class="card exchange-ticket">
+      <header><strong>{s.cve}</strong><code>{advisory.cve}</code></header>
+      <section><h2>{s.affected}</h2><p>{advisory.affected[locale]}</p><h2>{s.mitigation}</h2><p>{advisory.workaround[locale]}</p></section>
+      <footer><ScoreDetails severity={advisory.severity} {locale} /><ShareActions {locale} url={canonical} title={shareTitle} design={advisory.design} iconSet={advisory.iconSet} buttonClass="button success" /></footer>
+    </aside>
+  </div>
+</main>

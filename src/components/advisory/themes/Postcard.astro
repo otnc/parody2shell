@@ -1,0 +1,35 @@
+---
+import type { AdvisoryLayoutProps } from '../layout-props.ts';
+import { messages } from '../../../i18n/messages.ts';
+import { advisorySummary } from '../../../advisories/generate.ts';
+import Evidence from '../Evidence.astro';
+import ScoreDetails from '../ScoreDetails.astro';
+import ThemeNav from './ThemeNav.astro';
+import ShareActions from '../../ShareActions.astro';
+
+const { advisory, locale, home, alternate, canonical, shareTitle } = Astro.props as AdvisoryLayoutProps;
+const s = messages[locale];
+---
+
+<main id="postcard-alert" class="theme-shell postcard-alert">
+  <ThemeNav {locale} {home} {alternate} iconSet={advisory.iconSet} design={advisory.design} />
+  <article class="postcard-paper">
+    <header>
+      <div><p class="theme-parody">{s.parody}</p><h1 class="advisory-title">{advisory.title}</h1></div>
+      <p class="postcard-stamp">{s.score}<strong>{advisory.severity.score.toFixed(1)}</strong></p>
+    </header>
+    <div class="postcard-sides">
+      <section>
+        <blockquote class="advisory-summary">{advisorySummary(advisory, locale)}</blockquote>
+        <h2>{s.cause}</h2><p>{advisory.cause[locale]}</p>
+      </section>
+      <dl class="postcard-address">
+        <dt>{s.cve}</dt><dd><code>{advisory.cve}</code></dd>
+        <dt>{s.affected}</dt><dd>{advisory.affected[locale]}</dd>
+        <dt>{s.mitigation}</dt><dd>{advisory.workaround[locale]}</dd>
+      </dl>
+    </div>
+    <footer><ScoreDetails severity={advisory.severity} {locale} /><ShareActions {locale} url={canonical} title={shareTitle} design={advisory.design} iconSet={advisory.iconSet} buttonClass="postcard-action" /></footer>
+  </article>
+  <Evidence {advisory} evidence={advisory.evidence} {locale} />
+</main>

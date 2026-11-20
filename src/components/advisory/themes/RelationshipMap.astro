@@ -1,0 +1,90 @@
+---
+import type { AdvisoryLayoutProps } from '../layout-props.ts';
+import { messages } from '../../../i18n/messages.ts';
+import { advisorySummary } from '../../../advisories/generate.ts';
+import Evidence from '../Evidence.astro';
+import ScoreDetails from '../ScoreDetails.astro';
+import ThemeNav from './ThemeNav.astro';
+import ShareActions from '../../ShareActions.astro';
+
+const { advisory, locale, home, alternate, canonical, shareTitle } = Astro.props as AdvisoryLayoutProps;
+const s = messages[locale];
+const ja = locale === 'ja';
+const mapTitle = ja ? '現象の因果関係' : 'Incident relationships';
+const nodes = [
+  { label: ja ? '発動条件' : 'Trigger', text: advisory.trigger[locale], href: '#map-trigger' },
+  { label: s.cause, text: ja ? '想定外のシェルが現れる' : 'An unsolicited shell appears', href: '#map-cause' },
+  { label: s.mitigation, text: s.fixed + ' ' + advisory.evidence.fixedVersion, href: '#map-response' },
+];
+---
+
+<main id="incident-relationship-map" class="theme-shell incident-relationship-map">
+  <ThemeNav {locale} {home} {alternate} iconSet={advisory.iconSet} design={advisory.design} />
+  <header class="map-heading">
+    <div>
+      <p class="theme-parody">{s.parody}</p>
+      <h1 class="advisory-title">{advisory.title}</h1>
+      <p class="advisory-summary">{advisorySummary(advisory, locale)}</p>
+    </div>
+    <dl><dt>{s.cve}</dt><dd><code>{advisory.cve}</code></dd><dt>{s.score}</dt><dd>{advisory.severity.score.toFixed(1)} · {s.ratings[advisory.severity.rating]}</dd></dl>
+  </header>
+  <section class="map-workbench" aria-labelledby="map-title" data-map>
+    <div class="map-toolbar"><h2 id="map-title">{mapTitle}</h2>
+      <div class="map-controls" hidden data-map-controls>
+        <button type="button" data-map-action="zoomIn" aria-label={ja ? '拡大' : 'Zoom in'}>+</button>
+        <button type="button" data-map-action="zoomOut" aria-label={ja ? '縮小' : 'Zoom out'}>−</button>
+        <button type="button" data-map-action="reset">{ja ? '元の表示' : 'Reset view'}</button>
+      </div>
+    </div>
+    <div class="map-viewport" data-map-viewport>
+      <ol class="map-nodes" data-map-nodes>
+        {nodes.map(({ label, text, href }, index) => (
+          <li><a href={href} class="map-node"><span class="map-node-number">{index + 1}</span><b>{label}</b><span>{text}</span></a></li>
+        ))}
+      </ol>
+    </div>
+    <p class="map-instructions" hidden data-map-instructions>{ja ? '拡大後はドラッグまたは矢印キーで移動できます。各項目から詳細を開けます。' : 'After zooming, drag or use the arrow keys to pan. Each node links to its details.'}</p>
+  </section>
+  <div class="map-notes">
+    <section id="map-trigger"><h2>{nodes[0].label}</h2><p>{advisory.trigger[locale]}</p><p>{advisory.affected[locale]}</p></section>
+    <section id="map-cause"><h2>{s.cause}</h2><p>{advisory.cause[locale]}</p></section>
+    <section id="map-response"><h2>{s.mitigation}</h2><p>{advisory.workaround[locale]}</p></section>
+  </div>
+  <Evidence {advisory} evidence={advisory.evidence} {locale} />
+  <footer>
+    <ScoreDetails severity={advisory.severity} {locale} />
+    <ShareActions {locale} url={canonical} title={shareTitle} design={advisory.design} iconSet={advisory.iconSet} buttonClass="map-action" />
+  </footer>
+</main>
+
+<script is:inline type="module">
+  import Panzoom from '/client/panzoom.js';
+
+  const map = document.querySelector('[data-map]');
+  if (map) {
+    const viewport = map.querySelector('[data-map-viewport]');
+    const controls = map.querySelector('[data-map-controls]');
+    const diagram = map.querySelector('[data-map-nodes]');
+    const zoom = Panzoom(diagram, {
+      minScale: 1, maxScale: 2.5, step: 0.2, panOnlyWhenZoomed: true, touchAction: 'pan-y',
+      cursor: 'grab', animate: !matchMedia('(prefers-reduced-motion: reduce)').matches,
+    });
+    viewport.tabIndex = 0;
+    viewport.setAttribute('role', 'region');
+    viewport.setAttribute('aria-labelledby', 'map-title');
+    controls.hidden = false;
+    map.querySelector('[data-map-instructions]').hidden = false;
+    controls.addEventListener('click', event => {
+      const action = event.target.closest('button')?.dataset.mapAction;
+      if (action === 'zoomIn') zoom.zoomIn();
+      if (action === 'zoomOut') zoom.zoomOut();
+      if (action === 'reset') zoom.reset();
+    });
+    viewport.addEventListener('keydown', event => {
+      const movement = { ArrowLeft: [30, 0], ArrowRight: [-30, 0], ArrowUp: [0, 30], ArrowDown: [0, -30] }[event.key];
+      if (!movement || event.target !== viewport || zoom.getScale() <= 1) return;
+      event.preventDefault();
+      zoom.pan(...movement, { relative: true });
+    });
+  }
+</script>

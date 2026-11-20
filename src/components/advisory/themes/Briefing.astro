@@ -1,0 +1,31 @@
+---
+import { advisorySummary } from '../../../advisories/generate.ts';
+import { messages } from '../../../i18n/messages.ts';
+import ShareActions from '../../ShareActions.astro';
+import Evidence from '../Evidence.astro';
+import ScoreDetails from '../ScoreDetails.astro';
+import type { AdvisoryLayoutProps as Props } from '../layout-props.ts';
+import ThemeNav from './ThemeNav.astro';
+
+const { advisory, locale, home, alternate, canonical, shareTitle } = Astro.props;
+const s = messages[locale];
+---
+<main class="theme-shell briefing-deck" id="briefing-deck">
+  <ThemeNav iconSet={advisory.iconSet} {locale} {home} {alternate} design={advisory.design} />
+  <article class="large-round briefing-slide">
+    <p class="theme-parody">{s.parody}</p><h1 class="advisory-title">{advisory.title}</h1>
+    <p class="advisory-summary">{advisorySummary(advisory, locale)}</p>
+    <footer><ShareActions iconSet={advisory.iconSet} {locale} url={canonical} title={shareTitle} design={advisory.design} buttonClass="button border round" /></footer>
+  </article>
+  <div class="briefing-slides">
+    <article class="large-round"><h2>{s.mitigation}</h2><p>{advisory.workaround[locale]}</p></article>
+    <article class="large-round"><h2>{s.affected}</h2><p>{advisory.affected[locale]}</p></article>
+    <article class="large-round"><h2>{s.cause}</h2><p>{advisory.cause[locale]}</p></article>
+    <article class="large-round"><h2>{s.severity}</h2>
+      <p>{s.score} <strong>{advisory.severity.score.toFixed(1)} · {s.ratings[advisory.severity.rating]}</strong></p>
+      <p>{s.cve} <code>{advisory.cve}</code></p>
+      <ScoreDetails severity={advisory.severity} {locale} />
+    </article>
+  </div>
+  <Evidence {advisory} evidence={advisory.evidence} {locale} />
+</main>

@@ -1,0 +1,32 @@
+[data-design="research"] {
+  --page-accent: #194a89;
+  --page-rule: #ccd8e7;
+  --page-muted: #475d76;
+  background: #fff;
+  color: #122b49;
+  font-family: "Segoe UI", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", sans-serif;
+}
+[data-design="research"] .advisory-header { border-top: 0.35rem solid #204b82; background: #eef4fa; }
+[data-design="research"] .publication { color: #194a89; letter-spacing: 0.035em; }
+.research-paper { width: min(100% - 2.5rem, 69rem); margin: clamp(1.5rem, 5vw, 4rem) auto; }
+.research-front { border-bottom: 2px solid var(--page-rule); padding-bottom: 1.1rem; }
+.research-front .d-badge { color: var(--page-accent); }
+.research-front .advisory-title { margin-block: 0.7rem; font-family: "Baskerville", Georgia, "Yu Mincho", serif; color: #173c6c; }
+.research-byline { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.55rem; color: var(--page-muted); }
+.research-byline p { overflow-wrap: anywhere; font-size: 0.875rem; }
+.research-grid { display: grid; grid-template-columns: minmax(12rem, 17rem) minmax(0, 1fr); gap: clamp(1.5rem, 5vw, 4rem); margin-top: 1.6rem; }
+.research-sidebar { display: flex; flex-direction: column; gap: 1.1rem; align-items: stretch; }
+.research-sidebar nav { border-left: 0.18rem solid var(--page-accent); background: #f3f7fc; padding: 0.65rem 0.75rem; }
+.research-sidebar h2 { font-size: 0.9rem; font-weight: 700; padding: 0.35rem 0.45rem; }
+.research-sidebar .d-menu { padding: 0; width: 100%; }
+.research-sidebar .severity-card { background: #f3f7fc; border-radius: 0.2rem; }
+.research-content { display: grid; gap: 1.55rem; }
+.research-content h2 { font-family: Georgia, "Yu Mincho", serif; font-size: 1.45rem; font-weight: 700; }
+.research-content section > p { margin-top: 0.3rem; line-height: 1.65; }
+.research-abstract { background: #edf3fb; border-block: 1px solid var(--page-rule); padding: 1rem 1.25rem; }
+.research-abstract p { font-size: 1.1rem; }
+.research-content .chart, .research-content .evidence-table-wrap { background: #f8fbff; }
+@media (max-width: 45rem) {
+  .research-grid { grid-template-columns: 1fr; }
+  .research-sidebar .d-menu { flex-direction: row; flex-wrap: wrap; }
+}

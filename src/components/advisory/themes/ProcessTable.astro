@@ -1,0 +1,88 @@
+---
+import type { AdvisoryLayoutProps } from '../layout-props.ts';
+import { messages } from '../../../i18n/messages.ts';
+import { advisorySummary } from '../../../advisories/generate.ts';
+import Evidence from '../Evidence.astro';
+import ScoreDetails from '../ScoreDetails.astro';
+import ThemeNav from './ThemeNav.astro';
+import ShareActions from '../../ShareActions.astro';
+import CaseEvidence from '../case/CaseEvidence.astro';
+import { caseView } from '../case/case-view.ts';
+
+const { advisory, locale, home, alternate, canonical, shareTitle } = Astro.props as AdvisoryLayoutProps;
+const s = messages[locale];
+const ja = locale === 'ja';
+const view = caseView(advisory, locale);
+const rate = Math.round(view.hits * 100 / view.trials);
+const meter = (value: number) => '[' + '|'.repeat(Math.round(value / 5)).padEnd(20, ' ') + '] ' + value + '%';
+const pid = 1000 + Number(advisory.cve.slice(-3));
+const component = advisory.investigation?.component[locale] ?? s.cause;
+const details = [
+  { id: 'cause', title: s.cause, text: advisory.cause[locale] },
+  ...view.sections,
+];
+const rows = [
+  { detail: 'cause', state: 'S', cpu: 2, user: 'root', command: component },
+  { detail: 'expected', state: 'S', cpu: 0, user: 'svc', command: ja ? '想定される処理' : 'expected-path' },
+  { detail: 'observed', state: 'R', cpu: rate, user: '?', command: 'sh' },
+  { detail: view.sections.some(({ id }) => id === 'conditions') ? 'conditions' : 'comparison', state: 'R', cpu: 1, user: 'lab', command: ja ? '発生条件' : 'trigger' },
+  { detail: 'comparison', state: 'Z', cpu: 0, user: 'lab', command: advisory.evidence.fixedVersion },
+];
+const keys = [['F1', s.cause, '#process-details'], ['F2', s.trace, '#process-trace'], ['F3', s.affected, '#process-affected'], ['F10', s.mitigation, '#process-mitigation']];
+---
+
+<main id="process-table" class="theme-shell process-table" data-webtui-theme="dark">
+  <ThemeNav {locale} {home} {alternate} iconSet={advisory.iconSet} design={advisory.design} />
+  <header class="process-header">
+    <p class="theme-parody">{s.parody}</p>
+    <h1 class="advisory-title">{advisory.subject}<wbr />2shell</h1>
+    <p class="advisory-summary">{advisorySummary(advisory, locale)}</p>
+  </header>
+  <div class="process-meters" box-="square">
+    <pre aria-hidden="true">{'SHL ' + meter(rate) + '\nCVSS' + ' ' + meter(Math.round(advisory.severity.score * 10)) + '\n' + advisory.cve}</pre>
+    <p class="sr-only">{view.hits} / {view.trials} · {s.score} {advisory.severity.score.toFixed(1)}</p>
+    <p><span is-="badge">{s.ratings[advisory.severity.rating]}</span> <span is-="badge">{advisory.evidence.affectedVersion}</span></p>
+  </div>
+  <div class="process-scroll">
+    <table class="process-list">
+      <caption class="sr-only">{ja ? 'プロセス一覧' : 'Process list'}</caption>
+      <thead><tr><th scope="col">PID</th><th scope="col">USER</th><th scope="col">S</th><th scope="col">%SHL</th><th scope="col">COMMAND</th></tr></thead>
+      <tbody>
+        {rows.map((row, index) => (
+          <tr data-state={row.state}>
+            <td>{pid + index * 7}</td><td>{row.user}</td><td>{row.state}</td><td>{row.cpu.toFixed(1)}</td>
+            <td><button type="button" data-process-detail={row.detail} aria-controls={'process-detail-' + row.detail}>{row.command}</button></td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+  <section id="process-details" class="process-details" box-="square" aria-label={s.cause}>
+    {details.map(detail => <article id={'process-detail-' + detail.id} data-process-panel={detail.id}><h2>{detail.title}</h2><p>{detail.text}</p></article>)}
+  </section>
+  <div id="process-trace" class="process-evidence">
+    <CaseEvidence {advisory} {locale} form="trace" />
+    {advisory.evidence.format !== 'trace' && <Evidence {advisory} evidence={advisory.evidence} {locale} />}
+  </div>
+  <section id="process-affected" box-="square"><h2>{s.affected}</h2><p>{advisory.affected[locale]}</p></section>
+  <section id="process-mitigation" box-="square"><h2>{s.mitigation}</h2><p>{advisory.workaround[locale]}</p>
+    <ScoreDetails severity={advisory.severity} {locale} />
+    <ShareActions {locale} url={canonical} title={shareTitle} design={advisory.design} iconSet={advisory.iconSet} buttonClass="process-action" />
+  </section>
+  <nav class="process-keys" aria-label={ja ? 'ファンクションキー' : 'Function keys'}>
+    {keys.map(([key, label, href]) => <a href={href}><span is-="badge">{key}</span>{label}</a>)}
+  </nav>
+</main>
+
+<script is:inline>
+  const panels = [...document.querySelectorAll('[data-process-panel]')];
+  const buttons = [...document.querySelectorAll('[data-process-detail]')];
+  if (panels.length && buttons.length) {
+    const select = (id) => {
+      panels.forEach(panel => { panel.hidden = panel.dataset.processPanel !== id; });
+      buttons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.processDetail === id)));
+    };
+    buttons.forEach(button => button.addEventListener('click', () => select(button.dataset.processDetail)));
+    select('observed');
+  }
+</script>

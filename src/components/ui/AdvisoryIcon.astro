@@ -1,0 +1,13 @@
+---
+import type { IconSet } from '../../advisories/visuals.ts';
+import { iconArtwork, type IconName } from './icons.ts';
+
+interface Props {
+  set: IconSet;
+  name: IconName;
+}
+
+const { set, name } = Astro.props;
+---
+
+<span class="advisory-icon" data-icon={name} data-icon-set={set} aria-hidden="true" set:html={iconArtwork[set][name]}></span>

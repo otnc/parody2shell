@@ -1,0 +1,60 @@
+---
+import ShareActions from '../../ShareActions.astro';
+import AdvisoryHeader from '../AdvisoryHeader.astro';
+import Evidence from '../Evidence.astro';
+import ScoreDetails from '../ScoreDetails.astro';
+import { advisorySummary } from '../../../advisories/generate.ts';
+import { messages } from '../../../i18n/messages.ts';
+import type { AdvisoryLayoutProps as Props } from '../layout-props.ts';
+
+const { advisory, locale, canonical, alternate, home, shareTitle } = Astro.props;
+const strings = messages[locale];
+const { severity } = advisory;
+---
+
+<AdvisoryHeader {locale} {alternate} {home} design={advisory.design} />
+<main class="incident-board">
+  <header class="incident-front">
+    <div><span class="d-badge d-badge-outline">{strings.parody}</span><h1 class="advisory-title">{advisory.title}</h1></div>
+    <ShareActions iconSet={advisory.iconSet} {locale} url={canonical} title={shareTitle} design="incident" />
+  </header>
+  <dl class="d-stats incident-status" aria-label={strings.incidentStatus} id="incident-status">
+    <div class="d-stat">
+      <dt class="d-stat-title">{strings.incidentStatus}</dt>
+      <dd class="d-stat-value">{strings.incidentPublished}</dd>
+    </div>
+    <div class="d-stat">
+      <dt class="d-stat-title">{strings.severity}</dt>
+      <dd class="d-stat-value">{severity.score.toFixed(1)} · {strings.ratings[severity.rating]}</dd>
+      <dd class="d-stat-desc">{strings.score}</dd>
+    </div>
+    <div class="d-stat">
+      <dt class="d-stat-title">{strings.cve}</dt>
+      <dd class="d-stat-value"><code>{advisory.cve}</code></dd>
+    </div>
+  </dl>
+  <div class="incident-grid">
+    <section class="incident-impact" aria-labelledby="incident-overview">
+      <h2 id="incident-overview">{strings.summary}</h2>
+      <p class="advisory-summary">{advisorySummary(advisory, locale)}</p>
+      <h3>{strings.affected}</h3>
+      <p>{advisory.affected[locale]}</p>
+      <h3>{strings.mitigation}</h3>
+      <p>{advisory.workaround[locale]}</p>
+    </section>
+    <section class="incident-timeline" aria-labelledby="response-heading">
+      <h2 id="response-heading">{strings.recovery}</h2>
+      <ol class="d-steps d-steps-vertical">
+        {strings.milestones.map((event, index) => (
+          <li class="d-step d-step-info"><div><strong>{strings.timelinePhases[index]}</strong><p>{event}</p></div></li>
+        ))}
+      </ol>
+    </section>
+  </div>
+  <Evidence {advisory} evidence={advisory.evidence} {locale} />
+  <section class="incident-analysis" aria-labelledby="incident-findings">
+    <h2 id="incident-findings">{strings.cause}</h2>
+    <p>{advisory.cause[locale]}</p>
+    <ScoreDetails {severity} {locale} />
+  </section>
+</main>

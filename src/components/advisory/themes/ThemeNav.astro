@@ -1,0 +1,21 @@
+---
+import { messages, type Locale } from '../../../i18n/messages.ts';
+import { designs, type DesignId } from '../../../advisories/designs.ts';
+import type { IconSet } from '../../../advisories/visuals.ts';
+import AdvisoryIcon from '../../ui/AdvisoryIcon.astro';
+
+interface Props {
+  locale: Locale;
+  home: URL;
+  alternate: URL;
+  design: DesignId;
+  iconSet?: IconSet;
+}
+
+const { locale, home, alternate, design, iconSet } = Astro.props;
+const publication = designs[design].publication[locale];
+---
+<nav class="theme-nav">
+  <a href={home.href} aria-label={messages[locale].home}>{iconSet && <AdvisoryIcon set={iconSet} name="home" />}parody2shell / {publication}</a>
+  <a href={alternate.href} hreflang={locale === 'ja' ? 'en' : 'ja'}>{iconSet && <AdvisoryIcon set={iconSet} name="language" />}{messages[locale].language}</a>
+</nav>

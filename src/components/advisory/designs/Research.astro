@@ -1,0 +1,58 @@
+---
+import ShareActions from '../../ShareActions.astro';
+import AdvisoryHeader from '../AdvisoryHeader.astro';
+import Evidence from '../Evidence.astro';
+import Severity from '../Severity.astro';
+import { advisorySummary } from '../../../advisories/generate.ts';
+import { messages } from '../../../i18n/messages.ts';
+import type { AdvisoryLayoutProps as Props } from '../layout-props.ts';
+
+const { advisory, locale, canonical, alternate, home, shareTitle } = Astro.props;
+const strings = messages[locale];
+---
+
+<AdvisoryHeader {locale} {alternate} {home} design={advisory.design} />
+<main class="research-paper">
+  <header class="research-front">
+    <span class="d-badge d-badge-outline">{strings.parody}</span>
+    <h1 class="advisory-title">{advisory.title}</h1>
+    <div class="research-byline">
+      <p>{strings.cve} <code>{advisory.cve}</code></p>
+      <ShareActions iconSet={advisory.iconSet} {locale} url={canonical} title={shareTitle} design="research" />
+    </div>
+  </header>
+  <div class="research-grid">
+    <aside class="research-sidebar">
+      <nav aria-label={strings.contents}>
+        <h2>{strings.contents}</h2>
+        <ul class="d-menu">
+          <li><a href="#abstract">{strings.abstract}</a></li>
+          <li><a href="#findings">{strings.cause}</a></li>
+          <li><a href="#affected">{strings.affected}</a></li>
+          {advisory.evidence.format !== 'none' && <li><a href="#lab">{strings.evidence}</a></li>}
+          <li><a href="#workaround">{strings.mitigation}</a></li>
+        </ul>
+      </nav>
+      <Severity severity={advisory.severity} {locale} />
+    </aside>
+    <article class="research-content">
+      <section class="research-abstract" id="abstract">
+        <h2>{strings.abstract}</h2>
+        <p class="advisory-summary">{advisorySummary(advisory, locale)}</p>
+      </section>
+      <section id="findings">
+        <h2>{strings.cause}</h2>
+        <p>{advisory.cause[locale]}</p>
+      </section>
+      <section id="affected">
+        <h2>{strings.affected}</h2>
+        <p>{advisory.affected[locale]}</p>
+      </section>
+      <Evidence {advisory} evidence={advisory.evidence} {locale} />
+      <section id="workaround">
+        <h2>{strings.mitigation}</h2>
+        <p>{advisory.workaround[locale]}</p>
+      </section>
+    </article>
+  </div>
+</main>

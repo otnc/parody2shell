@@ -1,0 +1,29 @@
+---
+import { advisorySummary } from '../../../advisories/generate.ts';
+import { messages } from '../../../i18n/messages.ts';
+import ShareActions from '../../ShareActions.astro';
+import Evidence from '../Evidence.astro';
+import ScoreDetails from '../ScoreDetails.astro';
+import type { AdvisoryLayoutProps as Props } from '../layout-props.ts';
+import ThemeNav from './ThemeNav.astro';
+
+const { advisory, locale, home, alternate, canonical, shareTitle } = Astro.props;
+const s = messages[locale];
+---
+<main class="theme-shell arcade-board" id="arcade-board">
+  <ThemeNav iconSet={advisory.iconSet} {locale} {home} {alternate} design={advisory.design} />
+  <header class="nes-container is-dark with-title">
+    <p class="title">{s.parody}</p>
+    <h1 class="advisory-title">{advisory.title}</h1>
+    <p class="advisory-summary">{advisorySummary(advisory, locale)}</p>
+    <p>{s.cve} <code>{advisory.cve}</code></p>
+  </header>
+  <div class="arcade-panels">
+    <section class="nes-container with-title"><h2 class="title">{s.affected}</h2><p>{advisory.affected[locale]}</p></section>
+    <section class="nes-container with-title"><h2 class="title">{s.mitigation}</h2><p>{advisory.workaround[locale]}</p></section>
+    <section class="nes-container with-title"><h2 class="title">{s.cause}</h2><p>{advisory.cause[locale]}</p></section>
+    <aside class="nes-container with-title"><h2 class="title">{s.score}</h2><strong>{advisory.severity.score.toFixed(1)} · {s.ratings[advisory.severity.rating]}</strong><ScoreDetails severity={advisory.severity} {locale} /></aside>
+  </div>
+  <Evidence {advisory} evidence={advisory.evidence} {locale} />
+  <ShareActions iconSet={advisory.iconSet} {locale} url={canonical} title={shareTitle} design={advisory.design} buttonClass="nes-btn is-warning" />
+</main>

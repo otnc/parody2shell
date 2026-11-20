@@ -1,0 +1,8 @@
+---
+import SitePage from '../components/SitePage.astro';
+import { matchSiteHost } from '../routing/hostname.ts';
+
+const host = matchSiteHost(new URL(Astro.request.url).hostname);
+if (host.kind === 'unknown' || host.kind === 'redirect') return Astro.rewrite('/404');
+---
+<SitePage locale="en" {host} />

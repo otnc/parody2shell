@@ -1,0 +1,44 @@
+---
+import type { AdvisoryLayoutProps } from '../layout-props.ts';
+import { messages } from '../../../i18n/messages.ts';
+import { advisorySummary } from '../../../advisories/generate.ts';
+import ScoreDetails from '../ScoreDetails.astro';
+import Evidence from '../Evidence.astro';
+import ThemeNav from './ThemeNav.astro';
+import ShareActions from '../../ShareActions.astro';
+
+const { advisory, locale, home, alternate, canonical, shareTitle } = Astro.props as AdvisoryLayoutProps;
+const s = messages[locale];
+const { counts, trials } = advisory.evidence;
+const detection = Math.round(counts[1] * 100 / trials);
+const scanLabel = locale === 'ja' ? '試験中の起動率' : 'Test activation rate';
+---
+
+<main id="quarantine-scanner" class="theme-shell quarantine-scanner">
+  <ThemeNav {locale} {home} {alternate} iconSet={advisory.iconSet} design={advisory.design} />
+  <div class="scan-chamber">
+    <header class="scan-identity" data-augmented-ui="tl-clip br-clip border">
+      <p class="theme-parody">{s.parody}</p>
+      <h1 class="advisory-title">{advisory.subject}<wbr />2shell</h1>
+      <p class="advisory-summary">{advisorySummary(advisory, locale)}</p>
+      <p class="scan-record"><span>{s.cve}</span> <code>{advisory.cve}</code></p>
+      <ShareActions {locale} url={canonical} title={shareTitle} design={advisory.design} iconSet={advisory.iconSet} buttonClass="scan-action" />
+    </header>
+    <figure class="scan-figure" data-augmented-ui="tl-clip tr-clip br-clip bl-clip border">
+      <div class="scan-scope" aria-hidden="true" style={{ '--scan-rate': detection + '%' }}>
+        <span>{detection}<small>%</small></span>
+      </div>
+      <figcaption><strong>{scanLabel}</strong> {counts[1]} / {trials} <span>· {s.labCaption}</span></figcaption>
+    </figure>
+  </div>
+  <div class="scanner-readouts">
+    <section><h2>{s.affected}</h2><p>{advisory.affected[locale]}</p></section>
+    <section><h2>{s.cause}</h2><p>{advisory.cause[locale]}</p></section>
+    <section><h2>{s.mitigation}</h2><p>{advisory.workaround[locale]}</p></section>
+  </div>
+  <Evidence {advisory} evidence={advisory.evidence} {locale} />
+  <footer class="scanner-footer">
+    <p><b>{s.score}</b> {advisory.severity.score.toFixed(1)} · {s.ratings[advisory.severity.rating]}</p>
+    <ScoreDetails severity={advisory.severity} {locale} />
+  </footer>
+</main>

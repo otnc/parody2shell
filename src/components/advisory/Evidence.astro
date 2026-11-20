@@ -1,0 +1,112 @@
+---
+import type { Advisory } from '../../advisories/generate.ts';
+import { messages, type Locale } from '../../i18n/messages.ts';
+import CaseEvidence from './case/CaseEvidence.astro';
+
+interface Props {
+  advisory: Advisory;
+  evidence: Advisory['evidence'];
+  locale: Locale;
+}
+
+const { advisory, evidence, locale } = Astro.props;
+const caseForm = evidence.format === 'versions' || evidence.format === 'trace' || evidence.format === 'timeline' || evidence.format === 'flow' ? evidence.format : undefined;
+const strings = messages[locale];
+const showTable = evidence.format === 'table' || evidence.format === 'combined' || evidence.format === 'table-line';
+const showBar = evidence.format === 'bar' || evidence.format === 'combined';
+const showLine = evidence.format === 'line' || evidence.format === 'table-line';
+const activationRate = evidence.counts[1] * 100 / evidence.trials;
+const chartPoints = evidence.rounds.map((count, index) => ({
+  x: 32 + index * 100,
+  y: 164 - count * 3.4,
+  count,
+}));
+---
+
+{evidence.format !== 'none' && (
+  <section id="lab" class="advisory-evidence" data-evidence={evidence.format}>
+    <h2>{strings.evidence}</h2>
+    <p class="evidence-caption">{strings.labCaption}</p>
+
+    {showTable && (
+      <div class="evidence-table-wrap">
+        <table class="d-table evidence-table">
+          <caption>{strings.evidenceTable}</caption>
+          <thead>
+            <tr><th scope="col">{strings.group}</th><th scope="col">{strings.versions}</th><th scope="col">{strings.fixed}</th></tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row">{strings.rowLabels[0]}</th><td>{strings.noImpact}</td><td>—</td></tr>
+            <tr><th scope="row">{strings.rowLabels[1]}</th><td><code>{evidence.affectedVersion}</code></td><td><code>{evidence.fixedVersion}</code></td></tr>
+            <tr><th scope="row">{strings.rowLabels[2]}</th><td>{strings.noImpact}</td><td><code>{evidence.fixedVersion}</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    )}
+
+    {showBar && (
+      <figure class="chart">
+        <figcaption>{strings.evidenceChart}</figcaption>
+        <ul>
+          {evidence.counts.map((count, index) => (
+            <li>
+              <span>{strings.rowLabels[index]}</span>
+              <progress class="d-progress d-progress-primary" aria-label={strings.rowLabels[index]} value={count} max={evidence.trials}></progress>
+              <span class="chart-value">{count}/{evidence.trials}</span>
+            </li>
+          ))}
+        </ul>
+      </figure>
+    )}
+
+    {showLine && (
+      <figure class="chart line-chart">
+        <figcaption>{strings.evidenceTimeline}</figcaption>
+        <svg viewBox="0 0 565 195" aria-hidden="true">
+          <path d="M32 28H532 M32 96H532 M32 164H532" class="chart-grid" />
+          <text x="4" y="33">40</text>
+          <text x="4" y="101">20</text>
+          <text x="11" y="169">0</text>
+          <polyline points={chartPoints.map(({ x, y }) => x + ',' + y).join(' ')} class="chart-line" />
+          {chartPoints.map(({ x, y, count }, index) => (
+            <g>
+              <circle cx={x} cy={y} r="4" class="chart-point" />
+              <text x={x} y={y - 9} text-anchor="middle">{count}</text>
+              <text x={x} y="187" text-anchor="middle">{index + 1}</text>
+            </g>
+          ))}
+        </svg>
+        <ol class="sr-only">{evidence.rounds.map((count) => <li>{count}/{evidence.trials}</li>)}</ol>
+      </figure>
+    )}
+
+    {evidence.format === 'ring' && (
+      <figure class="chart">
+        <figcaption>{strings.evidenceRing}</figcaption>
+        <div class="trial-ring" style={{ '--activation-rate': activationRate + '%' }}>
+          <div><strong>{activationRate}%</strong><span>{evidence.counts[1]}/{evidence.trials}</span></div>
+        </div>
+      </figure>
+    )}
+
+    {caseForm && <CaseEvidence {advisory} {locale} form={caseForm} />}
+
+    {evidence.format === 'matrix' && (
+      <figure class="chart trial-matrix">
+        <figcaption>{strings.evidenceMatrix}</figcaption>
+        <p class="evidence-caption">{strings.evidenceKey}</p>
+        <ul>
+          {evidence.counts.map((count, index) => (
+            <li>
+              <span>{strings.rowLabels[index]}</span>
+              <span class="trial-marks" aria-hidden="true">
+                {Array.from({ length: evidence.trials }, (_, trial) => <i class:list={[{ 'trial-hit': trial < count }]}></i>)}
+              </span>
+              <span class="chart-value">{count}/{evidence.trials}</span>
+            </li>
+          ))}
+        </ul>
+      </figure>
+    )}
+  </section>
+)}

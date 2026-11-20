@@ -1,0 +1,108 @@
+---
+import type { AdvisoryLayoutProps } from '../layout-props.ts';
+import { messages } from '../../../i18n/messages.ts';
+import { advisorySummary } from '../../../advisories/generate.ts';
+import Evidence from '../Evidence.astro';
+import ScoreDetails from '../ScoreDetails.astro';
+import ThemeNav from './ThemeNav.astro';
+import ShareActions from '../../ShareActions.astro';
+import CaseEvidence from '../case/CaseEvidence.astro';
+import { caseView } from '../case/case-view.ts';
+
+const { advisory, locale, home, alternate, canonical, shareTitle } = Astro.props as AdvisoryLayoutProps;
+const s = messages[locale];
+const ja = locale === 'ja';
+const view = caseView(advisory, locale);
+const tabs = ja
+  ? [['main', 'メイン'], ['advanced', '詳細'], ['security', 'セキュリティ'], ['boot', '経過'], ['exit', '終了']]
+  : [['main', 'Main'], ['advanced', 'Advanced'], ['security', 'Security'], ['boot', 'Timeline'], ['exit', 'Exit']];
+const help = ja
+  ? ['←→ 項目の切り替え', 'Tab 次の操作', 'Enter 決定']
+  : ['←→ Select menu', 'Tab Next control', 'Enter Select'];
+---
+
+<main id="firmware-setup" class="theme-shell firmware-setup">
+  <ThemeNav {locale} {home} {alternate} iconSet={advisory.iconSet} design={advisory.design} />
+  <header class="bios-banner">
+    <p class="theme-parody">{s.parody}</p>
+    <h1 class="advisory-title">{advisory.subject}<wbr />2shell</h1>
+    <p>{ja ? 'セットアップユーティリティ' : 'Setup Utility'} · <code>{advisory.cve}</code></p>
+  </header>
+  <div class="tui-window bios-window">
+    <div class="bios-tabs" role="tablist" aria-label={ja ? '設定画面' : 'Setup pages'} data-bios-tabs hidden>
+      {tabs.map(([id, label], index) => (
+        <button type="button" role="tab" id={'bios-tab-' + id} aria-controls={'bios-panel-' + id} aria-selected={index === 0 ? 'true' : 'false'} tabindex={index === 0 ? 0 : -1}>{label}</button>
+      ))}
+    </div>
+    <div class="bios-body">
+      <div class="bios-panels">
+        <fieldset class="tui-fieldset bios-panel" role="tabpanel" id="bios-panel-main" aria-labelledby="bios-tab-main">
+          <legend>{tabs[0][1]}</legend>
+          <p class="advisory-summary">{advisorySummary(advisory, locale)}</p>
+          <dl class="bios-fields">
+            <div><dt>{s.cve}</dt><dd>{advisory.cve}</dd></div>
+            <div><dt>{s.releaseRoles.affected}</dt><dd>[{advisory.evidence.affectedVersion}]</dd></div>
+            <div><dt>{s.releaseRoles.fixed}</dt><dd>[{advisory.evidence.fixedVersion}]</dd></div>
+            <div><dt>{s.flowNodes.trigger}</dt><dd>{advisory.trigger[locale]}</dd></div>
+          </dl>
+        </fieldset>
+        <fieldset class="tui-fieldset bios-panel" role="tabpanel" id="bios-panel-advanced" aria-labelledby="bios-tab-advanced">
+          <legend>{tabs[1][1]}</legend>
+          <h2>{s.cause}</h2><p>{advisory.cause[locale]}</p>
+          {view.sections.map(section => <><h2>{section.title}</h2><p>{section.text}</p></>)}
+        </fieldset>
+        <fieldset class="tui-fieldset bios-panel" role="tabpanel" id="bios-panel-security" aria-labelledby="bios-tab-security">
+          <legend>{tabs[2][1]}</legend>
+          <p class="bios-score"><span>{s.score}</span> <strong>[{advisory.severity.score.toFixed(1)}]</strong> {s.ratings[advisory.severity.rating]}</p>
+          <ScoreDetails severity={advisory.severity} {locale} />
+          <CaseEvidence {advisory} {locale} form="versions" class="bios-versions" />
+          {advisory.evidence.format !== 'versions' && advisory.evidence.format !== 'timeline' && <Evidence {advisory} evidence={advisory.evidence} {locale} />}
+        </fieldset>
+        <fieldset class="tui-fieldset bios-panel" role="tabpanel" id="bios-panel-boot" aria-labelledby="bios-tab-boot">
+          <legend>{tabs[3][1]}</legend>
+          <CaseEvidence {advisory} {locale} form="timeline" />
+        </fieldset>
+        <fieldset class="tui-fieldset bios-panel" role="tabpanel" id="bios-panel-exit" aria-labelledby="bios-tab-exit">
+          <legend>{tabs[4][1]}</legend>
+          <h2>{s.affected}</h2><p>{advisory.affected[locale]}</p>
+          <h2>{s.mitigation}</h2><p>{advisory.workaround[locale]}</p>
+          <ShareActions {locale} url={canonical} title={shareTitle} design={advisory.design} iconSet={advisory.iconSet} buttonClass="tui-button" />
+        </fieldset>
+      </div>
+      <aside class="bios-help" aria-label={ja ? '項目の説明' : 'Item specific help'}>
+        <h2>{ja ? '項目の説明' : 'Item Specific Help'}</h2>
+        <p>{advisory.affected[locale]}</p>
+      </aside>
+    </div>
+    <div class="tui-statusbar bios-status"><ul>{help.map(item => <li>{item}</li>)}</ul></div>
+  </div>
+</main>
+
+<script is:inline>
+  const tablist = document.querySelector('[data-bios-tabs]');
+  if (tablist) {
+    const tabs = [...tablist.querySelectorAll('[role="tab"]')];
+    const select = (index, focus) => {
+      tabs.forEach((tab, position) => {
+        const active = position === index;
+        tab.setAttribute('aria-selected', String(active));
+        tab.tabIndex = active ? 0 : -1;
+        document.getElementById(tab.getAttribute('aria-controls')).hidden = !active;
+      });
+      if (focus) tabs[index].focus();
+    };
+    tablist.hidden = false;
+    tablist.addEventListener('click', (event) => {
+      const tab = event.target.closest('[role="tab"]');
+      if (tab) select(tabs.indexOf(tab), false);
+    });
+    tablist.addEventListener('keydown', (event) => {
+      const current = tabs.indexOf(document.activeElement);
+      const moves = { ArrowRight: 1, ArrowLeft: -1, Home: -current, End: tabs.length - 1 - current };
+      if (current < 0 || !(event.key in moves)) return;
+      event.preventDefault();
+      select((current + moves[event.key] + tabs.length) % tabs.length, true);
+    });
+    select(0, false);
+  }
+</script>

@@ -1,9 +1,10 @@
-import { ImageResponse } from 'cf-workers-og/workerd';
+import { a as renderPng } from 'cf-workers-og-renderer';
 import { env } from 'cloudflare:workers';
 import { generateAdvisory } from '../advisories/generate.ts';
 import type { Locale } from '../i18n/messages.ts';
 import { matchSiteHost } from '../routing/hostname.ts';
 import { ogCard } from './card.tsx';
+import { missingGlyphs } from './fallback.ts';
 import { ogImageVersion } from './version.ts';
 
 // A card never changes for a given host, language and version, so crawlers and the edge can keep it for a week.
@@ -37,12 +38,31 @@ export const renderOg = async (url: URL, locale: Locale) => {
     host.kind === 'advisory' ? generateAdvisory(host.label) : null,
     loadFont(url),
   ]);
-  const rendered = await ImageResponse.create(ogCard(locale, advisory), {
-    width: 1200,
-    height: 630,
-    fonts: [{ name: 'Noto Sans JP', data: font, weight: 400 }],
-  });
-  const body = await rendered.arrayBuffer();
+  // Characters outside Noto Sans JP, including emoji, are loaded from public/og by Satori on demand.
+  // A fallback font that the renderer cannot parse must not cost the whole card, so each retry drops one layer:
+  // first the extra fonts (keeping emoji images), then every additional asset.
+  const fullLoader = missingGlyphs(url.origin);
+  const loaders = [
+    fullLoader,
+    async (code: string, segment: string) => code === 'emoji' ? fullLoader(code, segment) : [],
+    undefined,
+  ];
+  let body: Uint8Array<ArrayBuffer> | undefined;
+  for (const [attempt, loadAdditionalAsset] of loaders.entries()) {
+    try {
+      body = await renderPng(ogCard(locale, advisory), {
+        width: 1200,
+        height: 630,
+        fonts: [{ name: 'Noto Sans JP', data: font, weight: 400 }],
+        loadAdditionalAsset,
+      });
+      break;
+    } catch (error) {
+      if (attempt === loaders.length - 1) throw error;
+      console.warn('Social card fallback failed; retrying with fewer assets.', String(error));
+    }
+  }
+  if (!body) throw new Error('The social card could not be rendered.');
   const response = new Response(body, {
     headers: {
       'Content-Type': 'image/png',

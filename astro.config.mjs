@@ -1,6 +1,7 @@
 import cloudflare from '@astrojs/cloudflare';
 import react from '@astrojs/react';
 import tailwindcss from '@tailwindcss/vite';
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'astro/config';
 import { fontsourceAssets } from './dev/fontsource-assets.mjs';
 
@@ -13,6 +14,12 @@ export default defineConfig({
   server: { host: 'localhost', port: 4321 },
   devToolbar: { enabled: false },
   vite: {
+    resolve: {
+      alias: {
+        // cf-workers-og 3.0.1 does not pass Satori's loadAdditionalAsset through ImageResponse, so cards call its renderer directly.
+        'cf-workers-og-renderer': fileURLToPath(new URL('./node_modules/cf-workers-og/dist/satori.workerd-CvrKfvIT.js', import.meta.url)),
+      },
+    },
     plugins: [fontsourceAssets, tailwindcss()],
     css: {
       lightningcss: { drafts: { customMedia: true } },
@@ -48,7 +55,7 @@ export default defineConfig({
       },
     },
     optimizeDeps: {
-      exclude: ['cf-workers-og/workerd'],
+      exclude: ['cf-workers-og/workerd', 'cf-workers-og-renderer'],
     },
   },
 });

@@ -38,7 +38,7 @@ const checkSocial = (html: string, hostname: string, locale: 'en' | 'ja', title:
   assert.equal(tags.get('og:locale'), locale === 'ja' ? 'ja_JP' : 'en_US');
   assert.equal(tags.get('og:locale:alternate'), locale === 'ja' ? 'en_US' : 'ja_JP');
   assert.equal(tags.get('og:url'), origin + path);
-  assert.equal(tags.get('og:image'), origin + imagePath + '?v=4');
+  assert.equal(tags.get('og:image'), origin + imagePath + '?v=5');
   assert.equal(tags.get('og:image:type'), 'image/png');
   assert.equal(tags.get('og:image:width'), '1200');
   assert.equal(tags.get('og:image:height'), '630');
@@ -102,7 +102,7 @@ test('the top pages offer all styles and route Japanese input to the same locale
     assert.match(html, /data-copy-url/);
     checkFooter(html);
     checkBadgeOnly(html, locale);
-    assert.equal(checkSocial(html, 'localhost', locale, title, 'website').get('og:image:alt'), 'agent2shell lol');
+    assert.equal(checkSocial(html, 'localhost', locale, title, 'website').get('og:image:alt'), 'everything2shell');
   }
   assert.match(en.body.toString(), /name\.2shell\.cc/);
   const response = await get('localhost', '/ja?subject=' + encodeURIComponent('なでしこ'));
@@ -147,7 +147,7 @@ test('advisories use four distinct themes and expose the same name and CVE in bo
 });
 
 test('www redirects even asset paths and localized 404 pages have no share controls', async () => {
-  for (const reserved of ['www', 'parody', 'xn--dckud3a9h']) {
+  for (const reserved of ['www', 'parody', 'everything', 'xn--dckud3a9h']) {
     const redirect = await get(reserved + '.localhost', '/ja?x=2');
     assert.equal(redirect.status, 301, reserved);
     assert.equal(redirect.headers.location, 'http://localhost:' + port + '/ja?x=2');
@@ -227,7 +227,7 @@ test('the new advisory themes render distinct components and load one local UI l
       const tags = checkSocial(html, hostname, locale, name + '2shell | parody2shell', 'article');
       assert.match(tags.get('og:image:alt') ?? '', /CVE-2026-[1-9]\d{12,13}$/);
     }
-    for (const path of ['/og.png?v=4', '/ja/og.png?v=4']) {
+    for (const path of ['/og.png?v=5', '/ja/og.png?v=5']) {
       const card = await get(hostname, path);
       assert.equal(card.status, 200, design + ' ' + path);
       assert.equal(card.body.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
@@ -271,7 +271,7 @@ test('fourth-edition themes render their case-file layouts, scripts and social c
       checkFooter(html);
       checkBadgeOnly(html, locale);
     }
-    for (const path of ['/og.png?v=4', '/ja/og.png?v=4']) {
+    for (const path of ['/og.png?v=5', '/ja/og.png?v=5']) {
       const card = await get(hostname, path);
       assert.equal(card.status, 200, design + ' ' + path);
       assert.equal(card.body.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
@@ -341,9 +341,27 @@ test('social previews keep the full Open Graph title and respect X title limits'
   const tags = checkSocial(page.body.toString(), host, 'en', label + '2shell | parody2shell', 'article');
   assert.equal(Array.from(tags.get('twitter:title') ?? '').length, 70);
   assert.ok(Array.from(tags.get('twitter:description') ?? '').length <= 200);
-  const react = await get('react.localhost', '/og.png?v=4');
-  const paperclip = await get('paperclip.localhost', '/og.png?v=4');
+  const react = await get('react.localhost', '/og.png?v=5');
+  const paperclip = await get('paperclip.localhost', '/og.png?v=5');
   assert.equal(react.status, 200);
   assert.equal(paperclip.status, 200);
   assert.notDeepEqual(react.body, paperclip.body);
+});
+
+test('social cards are cacheable, survive crawler query strings and name everything on the top page', async () => {
+  const first = await get('kettle.localhost', '/og.png?v=5');
+  const second = await get('kettle.localhost', '/og.png?v=5&utm_source=crawler');
+  for (const card of [first, second]) {
+    assert.equal(card.status, 200);
+    assert.match(card.headers['content-type'] ?? '', /^image\/png\b/);
+    assert.match(card.headers['cache-control'] ?? '', /s-maxage=604800/);
+    assert.equal(Number(card.headers['content-length']), card.body.length);
+  }
+  assert.deepEqual(first.body, second.body);
+  const head = await new Promise<number | undefined>((resolve, reject) => {
+    const req = request({ hostname: 'localhost', port, path: '/ja/og.png?v=5', method: 'HEAD', headers: { Host: 'kettle.localhost:' + port } }, response => resolve(response.statusCode));
+    req.on('error', reject);
+    req.end();
+  });
+  assert.equal(head, 200);
 });

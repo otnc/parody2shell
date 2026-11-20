@@ -4,8 +4,8 @@ type SubjectLabel = string & { readonly subjectLabel: unique symbol };
 
 const asciiLabel = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 const domainSuffix = '.invalid';
-// These labels redirect to the apex instead of opening an advisory. The last one is パロディ.
-const reservedLabels = new Set(['www', 'parody', 'xn--dckud3a9h']);
+// These labels redirect to the apex instead of opening an advisory. xn--dckud3a9h is パロディ.
+const reservedLabels = new Set(['www', 'parody', 'everything', 'xn--dckud3a9h']);
 
 /** Normalize one subject label for both the form and requests.
  * @example parseSubjectLabel('日本語') // 'xn--wgv71a119e'

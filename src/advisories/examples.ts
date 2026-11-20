@@ -47,3 +47,5 @@ export const headlineSubjects = [
 ] as const;
 export const headlineSuffix = '2shell lol';
 export const homeHeadline = headlineSubjects[0] + headlineSuffix;
+// The social card for the top page speaks for every subject rather than the first name in the rotation.
+export const socialHeadline = 'everything2shell';

@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
 import { advisorySummary, type Advisory } from '../advisories/generate.ts';
 import { designs } from '../advisories/designs.ts';
-import { homeHeadline } from '../advisories/examples.ts';
+import { socialHeadline } from '../advisories/examples.ts';
 import { messages, type Locale } from '../i18n/messages.ts';
 import { shortenSocialText } from './text.ts';
 
@@ -11,7 +11,7 @@ export const ogCard = (locale: Locale, advisory: Advisory | null) => {
   const strings = messages[locale];
   const design = advisory?.design ?? 'home';
   const colors = design === 'home' ? homeColors : designs[design];
-  const title = advisory ? shortenSocialText(advisory.subject, 42) + '2shell' : homeHeadline;
+  const title = advisory ? shortenSocialText(advisory.subject, 42) + '2shell' : socialHeadline;
   const titleSize = title.length > 32 ? 57 : title.length > 18 ? 72 : 92;
   const canvas: CSSProperties = {
     display: 'flex', flexDirection: 'column', width: '100%', height: '100%',

@@ -7,7 +7,7 @@ test('a subject occupies exactly one valid DNS label', () => {
   assert.equal(parseSubjectLabel('PAPERCLIP'), 'paperclip');
   assert.equal(parseSubjectLabel('123'), '123');
   assert.equal(parseSubjectLabel('a'.repeat(63)), 'a'.repeat(63));
-  for (const invalid of ['ｗｗｗ', 'www', 'parody', 'PARODY', 'パロディ', 'xn--dckud3a9h', 'one.two', 'one。two', 'a/b', 'a@b', '-a', 'a-', 'xn--', 'a'.repeat(64)]) {
+  for (const invalid of ['ｗｗｗ', 'www', 'parody', 'PARODY', 'everything', 'パロディ', 'xn--dckud3a9h', 'one.two', 'one。two', 'a/b', 'a@b', '-a', 'a-', 'xn--', 'a'.repeat(64)]) {
     assert.equal(parseSubjectLabel(invalid), null, invalid);
   }
 });
@@ -19,6 +19,7 @@ test('the apex, reserved www/parody labels and unrelated hosts have separate rou
   assert.deepEqual(matchSiteHost('parody.2shell.cc'), { kind: 'redirect', base: '2shell.cc' });
   assert.deepEqual(matchSiteHost('xn--dckud3a9h.2shell.cc'), { kind: 'redirect', base: '2shell.cc' });
   assert.deepEqual(matchSiteHost('parody.localhost'), { kind: 'redirect', base: 'localhost' });
+  assert.deepEqual(matchSiteHost('everything.2shell.cc'), { kind: 'redirect', base: '2shell.cc' });
   assert.deepEqual(matchSiteHost('xn--dckud3a9h.localhost'), { kind: 'redirect', base: 'localhost' });
   assert.deepEqual(matchSiteHost('x.y.2shell.cc'), { kind: 'unknown' });
   assert.deepEqual(matchSiteHost('2shell.cc.example.org'), { kind: 'unknown' });

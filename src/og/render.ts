@@ -4,22 +4,52 @@ import { generateAdvisory } from '../advisories/generate.ts';
 import type { Locale } from '../i18n/messages.ts';
 import { matchSiteHost } from '../routing/hostname.ts';
 import { ogCard } from './card.tsx';
+import { ogImageVersion } from './version.ts';
 
-/** Render the social card for a supported request hostname and language.
+// A card never changes for a given host, language and version, so crawlers and the edge can keep it for a week.
+const cacheControl = 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400';
+let fontData: Promise<ArrayBuffer> | undefined;
+
+const loadFont = (url: URL) => {
+  fontData ??= env.ASSETS.fetch(new Request(new URL('/fonts/noto-sans-jp-regular.otf', url))).then((font) => {
+    if (!font.ok) throw new Error('The bundled Open Graph font could not be loaded.');
+    return font.arrayBuffer();
+  });
+  // A failed load must not stay cached for the lifetime of the isolate.
+  fontData.catch(() => { fontData = undefined; });
+  return fontData;
+};
+
+/** Render the social card for a supported request hostname and language, reusing the edge copy when one exists.
  * @example await renderOg(new URL('http://toaster.localhost:4321/ja/og.png'), 'ja')
  */
 export const renderOg = async (url: URL, locale: Locale) => {
   const host = matchSiteHost(url.hostname);
   if (host.kind === 'unknown' || host.kind === 'redirect') return new Response(null, { status: 404 });
 
-  const advisory = host.kind === 'advisory' ? await generateAdvisory(host.label) : null;
-  const font = await env.ASSETS.fetch(new Request(new URL('/fonts/noto-sans-jp-regular.otf', url)));
-  if (!font.ok) throw new Error('The bundled Open Graph font could not be loaded.');
+  // Ignore crawler-added query parameters so every request for the same card shares one cache entry.
+  const key = new Request(url.origin + url.pathname + '?v=' + ogImageVersion);
+  const cache = (caches as unknown as { default: Cache }).default;
+  const cached = await cache.match(key);
+  if (cached) return cached;
 
-  return ImageResponse.create(ogCard(locale, advisory), {
+  const [advisory, font] = await Promise.all([
+    host.kind === 'advisory' ? generateAdvisory(host.label) : null,
+    loadFont(url),
+  ]);
+  const rendered = await ImageResponse.create(ogCard(locale, advisory), {
     width: 1200,
     height: 630,
-    headers: { 'Cache-Control': 'public, max-age=3600, s-maxage=86400' },
-    fonts: [{ name: 'Noto Sans JP', data: await font.arrayBuffer(), weight: 400 }],
+    fonts: [{ name: 'Noto Sans JP', data: font, weight: 400 }],
   });
+  const body = await rendered.arrayBuffer();
+  const response = new Response(body, {
+    headers: {
+      'Content-Type': 'image/png',
+      'Content-Length': String(body.byteLength),
+      'Cache-Control': cacheControl,
+    },
+  });
+  await cache.put(key, response.clone());
+  return response;
 };

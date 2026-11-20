@@ -1,6 +1,7 @@
 ---
 import { advisorySummary, generateAdvisory } from '../advisories/generate.ts';
-import { homeHeadline } from '../advisories/examples.ts';
+import { socialHeadline } from '../advisories/examples.ts';
+import { ogImageVersion } from '../og/version.ts';
 import { messages, type Locale } from '../i18n/messages.ts';
 import Document from '../layouts/Document.astro';
 import { matchSiteHost, siteUrl } from '../routing/hostname.ts';
@@ -20,13 +21,13 @@ const label = host.kind === 'advisory' ? host.label : undefined;
 const canonical = siteUrl(Astro.url, host.base, pathname, label);
 const alternate = siteUrl(Astro.url, host.base, alternatePath, label);
 const image = siteUrl(Astro.url, host.base, locale === 'ja' ? '/ja/og.png' : '/og.png', label);
-image.searchParams.set('v', '4');
+image.searchParams.set('v', ogImageVersion);
 const advisory = host.kind === 'advisory' ? await generateAdvisory(host.label) : null;
 const design = advisory?.design ?? 'home';
 const Layout = advisory && layouts[advisory.design];
 const title = advisory ? advisory.title + ' | parody2shell' : strings.homeTitle;
 const description = advisory ? advisorySummary(advisory, locale) : strings.homeDescription;
-const imageAlt = advisory ? advisory.title + ' · ' + advisory.cve : homeHeadline;
+const imageAlt = advisory ? advisory.title + ' · ' + advisory.cve : socialHeadline;
 ---
 
 <Document {locale} {title} {description} {design} {canonical} {alternate} {image} {imageAlt} displayFont={advisory?.displayFont} bodyFont={advisory?.bodyFont}>

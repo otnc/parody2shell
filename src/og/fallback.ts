@@ -89,6 +89,15 @@ const loadEmoji = (origin: string, segment: string) => {
   return data;
 };
 
+/** Report whether the generated fallback assets are deployed, so a card drawn without them is not cached.
+ * @example await fallbackAvailable('https://2shell.cc')
+ */
+export const fallbackAvailable = async (origin: string) => {
+  const index = await loadIndex(origin);
+  if (index.length === 0) indexData = undefined;
+  return index.length > 0;
+};
+
 /** Build Satori's loadAdditionalAsset for characters the main card font lacks.
  * @example await missingGlyphs('https://2shell.cc')('ko-KR', '한국어')
  */

@@ -4,11 +4,20 @@ import tailwindcss from '@tailwindcss/vite';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'astro/config';
 import { fontsourceAssets } from './dev/fontsource-assets.mjs';
+import { generateOgAssets } from './dev/og-assets.mjs';
+
+// public/og is generated, so every dev server and build (including `cf deploy`) writes it before Vite copies public/.
+const ogAssets = {
+  name: 'og-assets',
+  hooks: {
+    'astro:config:setup': async ({ logger }) => logger.info(await generateOgAssets()),
+  },
+};
 
 export default defineConfig({
   output: 'server',
   adapter: cloudflare({ imageService: 'passthrough' }),
-  integrations: [react()],
+  integrations: [ogAssets, react()],
   session: false,
   trailingSlash: 'ignore',
   server: { host: 'localhost', port: 4321 },

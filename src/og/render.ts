@@ -4,7 +4,7 @@ import { generateAdvisory } from '../advisories/generate.ts';
 import type { Locale } from '../i18n/messages.ts';
 import { matchSiteHost } from '../routing/hostname.ts';
 import { ogCard } from './card.tsx';
-import { missingGlyphs } from './fallback.ts';
+import { fallbackAvailable, missingGlyphs } from './fallback.ts';
 import { ogImageVersion } from './version.ts';
 
 // A card never changes for a given host, language and version, so crawlers and the edge can keep it for a week.
@@ -48,6 +48,7 @@ export const renderOg = async (url: URL, locale: Locale) => {
     undefined,
   ];
   let body: Uint8Array<ArrayBuffer> | undefined;
+  let complete = await fallbackAvailable(url.origin);
   for (const [attempt, loadAdditionalAsset] of loaders.entries()) {
     try {
       body = await renderPng(ogCard(locale, advisory), {
@@ -58,6 +59,7 @@ export const renderOg = async (url: URL, locale: Locale) => {
       });
       break;
     } catch (error) {
+      complete = false;
       if (attempt === loaders.length - 1) throw error;
       console.warn('Social card fallback failed; retrying with fewer assets.', String(error));
     }
@@ -70,6 +72,7 @@ export const renderOg = async (url: URL, locale: Locale) => {
       'Cache-Control': cacheControl,
     },
   });
-  await cache.put(key, response.clone());
+  // A card drawn without the fallback assets is served but not cached, so it is redrawn once they are available.
+  if (complete) await cache.put(key, response.clone());
   return response;
 };

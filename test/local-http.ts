@@ -38,7 +38,7 @@ const checkSocial = (html: string, hostname: string, locale: 'en' | 'ja', title:
   assert.equal(tags.get('og:locale'), locale === 'ja' ? 'ja_JP' : 'en_US');
   assert.equal(tags.get('og:locale:alternate'), locale === 'ja' ? 'en_US' : 'ja_JP');
   assert.equal(tags.get('og:url'), origin + path);
-  assert.equal(tags.get('og:image'), origin + imagePath + '?v=10');
+  assert.equal(tags.get('og:image'), origin + imagePath + '?v=11');
   assert.equal(tags.get('og:image:type'), 'image/png');
   assert.equal(tags.get('og:image:width'), '1200');
   assert.equal(tags.get('og:image:height'), '630');
@@ -227,7 +227,7 @@ test('the new advisory themes render distinct components and load one local UI l
       const tags = checkSocial(html, hostname, locale, name + '2shell | parody2shell', 'article');
       assert.match(tags.get('og:image:alt') ?? '', /CVE-2026-[1-9]\d{12,13}$/);
     }
-    for (const path of ['/og.png?v=10', '/ja/og.png?v=10']) {
+    for (const path of ['/og.png?v=11', '/ja/og.png?v=11']) {
       const card = await get(hostname, path);
       assert.equal(card.status, 200, design + ' ' + path);
       assert.equal(card.body.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
@@ -271,7 +271,7 @@ test('fourth-edition themes render their case-file layouts, scripts and social c
       checkFooter(html);
       checkBadgeOnly(html, locale);
     }
-    for (const path of ['/og.png?v=10', '/ja/og.png?v=10']) {
+    for (const path of ['/og.png?v=11', '/ja/og.png?v=11']) {
       const card = await get(hostname, path);
       assert.equal(card.status, 200, design + ' ' + path);
       assert.equal(card.body.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
@@ -341,16 +341,16 @@ test('social previews keep the full Open Graph title and respect X title limits'
   const tags = checkSocial(page.body.toString(), host, 'en', label + '2shell | parody2shell', 'article');
   assert.equal(Array.from(tags.get('twitter:title') ?? '').length, 70);
   assert.ok(Array.from(tags.get('twitter:description') ?? '').length <= 200);
-  const react = await get('react.localhost', '/og.png?v=10');
-  const paperclip = await get('paperclip.localhost', '/og.png?v=10');
+  const react = await get('react.localhost', '/og.png?v=11');
+  const paperclip = await get('paperclip.localhost', '/og.png?v=11');
   assert.equal(react.status, 200);
   assert.equal(paperclip.status, 200);
   assert.notDeepEqual(react.body, paperclip.body);
 });
 
 test('social cards are cacheable, survive crawler query strings and name everything on the top page', async () => {
-  const first = await get('kettle.localhost', '/og.png?v=10');
-  const second = await get('kettle.localhost', '/og.png?v=10&utm_source=crawler');
+  const first = await get('kettle.localhost', '/og.png?v=11');
+  const second = await get('kettle.localhost', '/og.png?v=11&utm_source=crawler');
   for (const card of [first, second]) {
     assert.equal(card.status, 200);
     assert.match(card.headers['content-type'] ?? '', /^image\/png\b/);
@@ -359,7 +359,7 @@ test('social cards are cacheable, survive crawler query strings and name everyth
   }
   assert.deepEqual(first.body, second.body);
   const head = await new Promise<number | undefined>((resolve, reject) => {
-    const req = request({ hostname: 'localhost', port, path: '/ja/og.png?v=10', method: 'HEAD', headers: { Host: 'kettle.localhost:' + port } }, response => resolve(response.statusCode));
+    const req = request({ hostname: 'localhost', port, path: '/ja/og.png?v=11', method: 'HEAD', headers: { Host: 'kettle.localhost:' + port } }, response => resolve(response.statusCode));
     req.on('error', reject);
     req.end();
   });
@@ -367,10 +367,10 @@ test('social cards are cacheable, survive crawler query strings and name everyth
 });
 
 test('social cards render emoji and non-Japanese scripts without failing', async () => {
-  for (const name of ['猫😺', '❤️🔥', '🇯🇵', '한국어', 'مرحبا', 'ไทย', 'हिन्दी', 'ქართული', '∑≈∞♞']) {
+  for (const name of ['🤩', '猫😺', '❤️🔥', '🇯🇵', '한국어', 'مرحبا', 'ไทย', 'हिन्दी', 'ქართული', '∑≈∞♞']) {
     const label = parseSubjectLabel(name);
     assert.ok(label, name);
-    for (const path of ['/og.png?v=10', '/ja/og.png?v=10']) {
+    for (const path of ['/og.png?v=11', '/ja/og.png?v=11']) {
       const card = await get(label + '.localhost', path);
       assert.equal(card.status, 200, name + ' ' + path);
       assert.equal(card.body.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
